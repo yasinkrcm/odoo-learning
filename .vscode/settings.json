@@ -1,0 +1,10 @@
+{
+    "antigravity.diagnostics.ignoredCodes": [
+        "import-error",
+        "unused-import"
+    ],
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingImports": "none",
+        "reportUnusedImport": "none"
+    }
+}
