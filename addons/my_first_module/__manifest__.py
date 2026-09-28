@@ -1,0 +1,21 @@
+{
+    'name': 'My First Module',
+    'version': '1.0',
+    'license': 'LGPL-3',
+    'summary': 'Simple todo list module for learning Odoo',
+    'description': 'A minimal module to learn Odoo module structure.',
+    'author': 'Yasin Karacam',
+    'category': 'Productivity',
+    'depends': ['base', 'base_automation'],
+    'data': [
+        'security/security_advanced.xml',
+        'security/ir.model.access.csv',
+        'views/todo_views.xml',
+        'views/res_partner_views.xml',
+        'views/todo_wizard_views.xml',
+        'views/todo_report.xml',
+        'views/automation_and_server_action.xml',
+    ],
+    'installable': True,
+    'application': True,
+}
