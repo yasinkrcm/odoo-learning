@@ -6,3 +6,4 @@ class ResPartner(models.Model):
 
     is_vip = fields.Boolean(string='VIP Customer')
     vip_notes = fields.Text(string='VIP Notes')
+
