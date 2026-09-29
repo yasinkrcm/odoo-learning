@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Rapor Aksiyonu -->
+    <record id="action_report_todo_task" model="ir.actions.report">
+        <field name="name">Todo Report</field>
+        <field name="model">my.todo</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">my_first_module.report_todo_task_template</field>
+        <field name="report_file">my_first_module.report_todo_task_template</field>
+        <field name="binding_model_id" ref="model_my_todo"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- QWeb PDF Şablonu (Fatura Layout'u Olmayan Temiz Tasarım) -->
+    <template id="report_todo_task_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <div class="page" style="font-family: Arial, sans-serif; font-size: 13px; color: #333; padding: 25px;">
+                        
+                        <!-- Üst Başlık & Çizgi -->
+                        <div style="border-bottom: 2px solid #007bff; padding-bottom: 12px; margin-bottom: 25px;">
+                            <h2 style="font-size: 22px; font-weight: bold; margin: 0; color: #212529;">
+                                Görev Raporu: <span t-field="doc.name"/>
+                            </h2>
+                            <small class="text-muted" style="color: #6c757d;">Oluşturulma Tarihi: <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d.%m.%Y %H:%M')"/></small>
+                        </div>
+
+                        <!-- Bilgi Tablosu -->
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #e9ecef;">
+                                    <td style="padding: 10px; font-weight: bold; width: 25%; background-color: #f8f9fa;">Durum (Status)</td>
+                                    <td style="padding: 10px; width: 25%;">
+                                        <span t-if="doc.is_done">Tamamlandı</span>
+                                        <span t-else="">Devam Ediyor</span>
+                                    </td>
+                                    <td style="padding: 10px; font-weight: bold; width: 25%; background-color: #f8f9fa;">Son Tarih (Deadline)</td>
+                                    <td style="padding: 10px; width: 25%;">
+                                        <span t-field="doc.deadline"/>
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e9ecef;">
+                                    <td style="padding: 10px; font-weight: bold; background-color: #f8f9fa;">Atanan Kişi</td>
+                                    <td style="padding: 10px;">
+                                        <span t-field="doc.user_id.name"/>
+                                    </td>
+                                    <td style="padding: 10px; font-weight: bold; background-color: #f8f9fa;">İlgili Müşteri</td>
+                                    <td style="padding: 10px;">
+                                        <t t-if="doc.partner_id">
+                                            <span t-field="doc.partner_id.name"/>
+                                            <t t-if="doc.partner_is_vip">
+                                                (VIP)
+                                            </t>
+                                        </t>
+                                        <t t-else="">
+                                            <span style="color: #6c757d;">—</span>
+                                        </t>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Açıklama Alanı -->
+                        <t t-if="doc.description">
+                            <div style="margin-top: 20px;">
+                                <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #495057;">Açıklama:</div>
+                                <div style="border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; background-color: #fdfdfd; min-height: 80px;">
+                                    <div t-field="doc.description"/>
+                                </div>
+                            </div>
+                        </t>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
