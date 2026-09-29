@@ -1,0 +1,25 @@
+<odoo>
+    <record id="view_todo_deadline_wizard_form" model="ir.ui.view">
+        <field name="name">my.todo.deadline.wizard.form</field>
+        <field name="model">my.todo.deadline.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="deadline"/>
+                </group>
+                <footer>
+                    <button name="action_apply" type="object" string="Apply" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_todo_deadline_wizard" model="ir.actions.act_window">
+        <field name="name">Set Deadline</field>
+        <field name="res_model">my.todo.deadline.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_my_todo"/>
+    </record>
+</odoo>
