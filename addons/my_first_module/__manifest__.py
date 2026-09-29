@@ -9,6 +9,8 @@
     'data': [
         'security/ir.model.access.csv',
         'views/todo_views.xml',
+        'views/res_partner_views.xml',
+        'views/todo_wizard_views.xml',
     ],
     'installable': True,
     'application': True,

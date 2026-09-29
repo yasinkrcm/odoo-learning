@@ -1,0 +1,13 @@
+<odoo>
+    <record id="view_partner_form_inherit_vip" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.vip</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='email']" position="after">
+                <field name="is_vip"/>
+                <field name="vip_notes" invisible="not is_vip"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
