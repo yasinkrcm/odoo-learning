@@ -1,0 +1,50 @@
+<odoo>
+    <record id="action_report_todo" model="ir.actions.report">
+        <field name="name">Todo Report</field>
+        <field name="model">my.todo</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">my_first_module.report_todo</field>
+        <field name="report_file">my_first_module.report_todo</field>
+        <field name="binding_model_id" ref="model_my_todo"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_todo">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>
+                            <span t-field="o.name"/>
+                        </h2>
+
+                        <table class="table table-sm" style="margin-top: 20px;">
+                            <tr>
+                                <td><strong>Deadline</strong></td>
+                                <td><span t-field="o.deadline"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Assigned To</strong></td>
+                                <td><span t-field="o.user_id"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Related Customer</strong></td>
+                                <td><span t-field="o.partner_id"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status</strong></td>
+                                <td>
+                                    <span t-if="o.is_done">Done</span>
+                                    <span t-else="">Open</span>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h4 style="margin-top: 20px;">Description</h4>
+                        <p t-field="o.description"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

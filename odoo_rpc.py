@@ -95,3 +95,6 @@ confirmed = call('sale.order', 'search_read',
     [[['id', '=', order_id]]],
     {'fields': ['state']})
 print(confirmed)
+
+grouped = call('my.todo', 'read_group', [[], ['is_done'], ['is_done']])
+print(grouped)
