@@ -1,0 +1,28 @@
+<odoo>
+    <record id="server_action_todo_mark_all_done" model="ir.actions.server">
+        <field name="name">Mark Selected as Done</field>
+        <field name="model_id" ref="model_my_todo"/>
+        <field name="binding_model_id" ref="model_my_todo"/>
+        <field name="state">code</field>
+        <field name="code">
+records.write({'is_done': True})
+        </field>
+    </record>
+
+    <record id="server_action_todo_log_create" model="ir.actions.server">
+        <field name="name">Todo: log on create</field>
+        <field name="model_id" ref="model_my_todo"/>
+        <field name="state">code</field>
+        <field name="code">
+for record in records:
+    log('New todo created: %s' % record.name)
+        </field>
+    </record>
+
+    <record id="automation_todo_on_create" model="base.automation">
+        <field name="name">Todo: log on create</field>
+        <field name="model_id" ref="model_my_todo"/>
+        <field name="trigger">on_create_or_write</field>
+        <field name="action_server_ids" eval="[(4, ref('server_action_todo_log_create'))]"/>
+    </record>
+</odoo>
