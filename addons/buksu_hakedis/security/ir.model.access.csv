@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_buksu_hakedis_donem_user,buksu.hakedis.donem.user,model_buksu_hakedis_donem,group_buksu_hakedis_user,1,1,1,0
+access_buksu_hakedis_satir_user,buksu.hakedis.satir.user,model_buksu_hakedis_satir,group_buksu_hakedis_user,1,1,1,0
+access_buksu_ekip_user,buksu.ekip.user,model_buksu_ekip,group_buksu_hakedis_user,1,1,1,0
+access_buksu_hakedis_donem_manager,buksu.hakedis.donem.manager,model_buksu_hakedis_donem,group_buksu_hakedis_manager,1,1,1,1
+access_buksu_hakedis_satir_manager,buksu.hakedis.satir.manager,model_buksu_hakedis_satir,group_buksu_hakedis_manager,1,1,1,1
+access_buksu_ekip_manager,buksu.ekip.manager,model_buksu_ekip,group_buksu_hakedis_manager,1,1,1,1

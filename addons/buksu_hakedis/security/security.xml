@@ -1,0 +1,15 @@
+<odoo>
+    <record id="group_buksu_hakedis_user" model="res.groups">
+        <field name="name">Hakediş Kullanıcısı</field>
+    </record>
+
+    <record id="group_buksu_hakedis_manager" model="res.groups">
+        <field name="name">Hakediş Yöneticisi</field>
+        <field name="implied_ids" eval="[(4, ref('group_buksu_hakedis_user'))]"/>
+    </record>
+
+    <!-- tüm iç kullanıcılara temel hakediş erişimi ver -->
+    <record id="base.group_user" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_buksu_hakedis_user'))]"/>
+    </record>
+</odoo>
