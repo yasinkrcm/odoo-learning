@@ -1,0 +1,10 @@
+<odoo>
+    <record id="seq_buksu_hakedis_donem" model="ir.sequence">
+        <field name="name">Hakediş Dönemi</field>
+        <field name="code">buksu.hakedis.donem</field>
+        <field name="prefix">HKD/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="implementation">no_gap</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>
