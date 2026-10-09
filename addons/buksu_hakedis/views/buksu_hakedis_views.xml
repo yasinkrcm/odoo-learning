@@ -1,0 +1,146 @@
+<odoo>
+    <!-- Hakediş Dönemi: arama -->
+    <record id="view_buksu_hakedis_donem_search" model="ir.ui.view">
+        <field name="name">buksu.hakedis.donem.search</field>
+        <field name="model">buksu.hakedis.donem</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Hakediş No"/>
+                <field name="proje_id"/>
+                <field name="ekip_id"/>
+                <field name="ekip_partner_id" options="{'no_create': False}" required="1"/>   
+                <filter name="filter_taslak" string="Taslak" domain="[('durum', '=', 'taslak')]"/>
+                <filter name="filter_onaylandi" string="Onaylandı" domain="[('durum', '=', 'onaylandi')]"/>
+                <filter name="filter_odendi" string="Ödendi" domain="[('durum', '=', 'odendi')]"/>
+                <group>
+                    <filter name="group_proje" string="Proje" context="{'group_by': 'proje_id'}"/>
+                    <filter name="group_ekip" string="Ekip" context="{'group_by': 'ekip_id'}"/>
+                    <filter name="group_durum" string="Durum" context="{'group_by': 'durum'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Hakediş Dönemi: liste -->
+    <record id="view_buksu_hakedis_donem_list" model="ir.ui.view">
+        <field name="name">buksu.hakedis.donem.list</field>
+        <field name="model">buksu.hakedis.donem</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="durum == 'odendi'">
+                <field name="name"/>
+                <field name="proje_id"/>
+                <field name="ekip_id"/>
+                <field name="tarih_baslangic"/>
+                <field name="tarih_bitis"/>
+                <field name="net_tutar" sum="Net Toplam"/>
+                <field name="fatura_durumu" optional="hide"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="durum" widget="badge"
+                       decoration-info="durum == 'taslak'"
+                       decoration-warning="durum == 'onaylandi'"
+                       decoration-success="durum == 'odendi'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Hakediş Dönemi: form -->
+    <record id="view_buksu_hakedis_donem_form" model="ir.ui.view">
+        <field name="name">buksu.hakedis.donem.form</field>
+        <field name="model">buksu.hakedis.donem</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_onayla" type="object" string="Onayla"
+                            class="btn-primary" invisible="durum != 'taslak'"
+                            confirm="Hakediş dönemi onaylanacak. Onaydan sonra satırlar değiştirilemez. Devam edilsin mi?"/>
+                    <button name="action_odeme_yap" type="object" string="Ödeme Yap"
+                            class="btn-primary" invisible="durum != 'onaylandi'"
+                            confirm="Hakediş 'Ödendi' olarak işaretlenecek. Bu işlem geri alınamaz. Devam edilsin mi?"/>
+                    <button name="action_fatura_olustur" type="object" string="Fatura Oluştur"
+                            invisible="durum not in ('onaylandi', 'odendi') or fatura_id"/>
+                    <field name="durum" widget="statusbar"
+                           statusbar_visible="taslak,onaylandi,odendi"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_fatura" type="object"
+                                class="oe_stat_button" icon="fa-pencil-square-o"
+                                invisible="not fatura_id">
+                            <field name="fatura_durumu" widget="statinfo" string="Fatura"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1" placeholder="Otomatik numaralandırılır"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="proje_id" readonly="durum != 'taslak'" options="{'no_create': True}"/>
+                            <field name="ekip_id" readonly="durum != 'taslak'"/>
+                            <field name="tarih_baslangic" readonly="durum != 'taslak'"/>
+                            <field name="tarih_bitis" readonly="durum != 'taslak'"/>
+                        </group>
+                        <group>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="brut_toplam"/>
+                            <field name="kesinti_tutari"/>
+                            <field name="net_tutar" class="fw-bold"/>
+                            <field name="fatura_id" invisible="1"/>
+                            <field name="fatura_durumu" invisible="not fatura_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="page_satirlar" string="Hakediş Satırları">
+                            <field name="satir_ids" readonly="durum != 'taslak'">
+                                <list editable="bottom">
+                                    <field name="is_kalemi" required="1"/>
+                                    <field name="birim" optional="show"/>
+                                    <field name="miktar"/>
+                                    <field name="birim_fiyat"/>
+                                    <field name="kesinti_yuzdesi" optional="show"/>
+                                    <field name="toplam" sum="Toplam"/>
+                                    <field name="aciklama" optional="hide"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer oe_right">
+                                <field name="brut_toplam" string="Brüt Toplam"/>
+                                <field name="kesinti_tutari" string="Kesinti Tutarı"/>
+                                <field name="net_tutar" string="Net Ödenecek Tutar" class="oe_subtotal_footer_separator"/>
+                            </group>
+                        </page>
+                        <page name="page_aciklama" string="Açıklama">
+                            <field name="aciklama" placeholder="Hakedişle ilgili notlar..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Eylem ve menüler (Proje uygulaması altında) -->
+    <record id="action_buksu_hakedis_donem" model="ir.actions.act_window">
+        <field name="name">Hakediş Dönemleri</field>
+        <field name="res_model">buksu.hakedis.donem</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_buksu_hakedis_donem_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                İlk hakediş dönemini oluşturun
+            </p>
+            <p>
+                Proje ve ekip seçin, iş kalemlerini girin, onaylayıp ödeme yapın.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_buksu_hakedis_root"
+              name="Hakediş"
+              web_icon="buksu_hakedis,static/description/icon.png"
+              sequence="55"/>
+    <menuitem id="menu_buksu_hakedis_donem"
+              name="Hakediş Dönemleri"
+              parent="menu_buksu_hakedis_root"
+              action="action_buksu_hakedis_donem"
+              sequence="10"/>
+</odoo>
