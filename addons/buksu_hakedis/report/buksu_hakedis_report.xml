@@ -1,0 +1,107 @@
+<odoo>
+    <record id="action_report_buksu_hakedis_donem" model="ir.actions.report">
+        <field name="name">Hakediş Dönemi Raporu</field>
+        <field name="model">buksu.hakedis.donem</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">buksu_hakedis.report_buksu_hakedis_donem</field>
+        <field name="report_file">buksu_hakedis.report_buksu_hakedis_donem</field>
+        <field name="binding_model_id" ref="model_buksu_hakedis_donem"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Hakedis - %s' % (object.name)</field>
+    </record>
+
+    <template id="report_buksu_hakedis_donem">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="oe_structure"/>
+                        <h2 class="mt-2">
+                            Hakediş Dönemi: <span t-field="doc.name"/>
+                        </h2>
+
+                        <table class="table table-sm table-borderless o_main_table" style="margin-bottom: 1rem;">
+                            <tr>
+                                <td width="35%"><strong>Proje</strong></td>
+                                <td><span t-field="doc.proje_id.name"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ekip</strong></td>
+                                <td><span t-field="doc.ekip_id.name"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dönem</strong></td>
+                                <td>
+                                    <span t-field="doc.tarih_baslangic"/> -
+                                    <span t-field="doc.tarih_bitis"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Durum</strong></td>
+                                <td><span t-field="doc.durum"/></td>
+                            </tr>
+                        </table>
+
+                        <h4>İş Kalemleri</h4>
+                        <table class="table table-sm o_main_table">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 5%;">#</th>
+                                    <th>İş Kalemi</th>
+                                    <th class="text-center" style="width: 10%;">Birim</th>
+                                    <th class="text-end" style="width: 12%;">Miktar</th>
+                                    <th class="text-end" style="width: 16%;">Birim Fiyat</th>
+                                    <th class="text-center" style="width: 9%;">Kesinti %</th>
+                                    <th class="text-end" style="width: 18%;">Tutar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.satir_ids" t-as="satir">
+                                    <tr>
+                                        <td class="text-center"><span t-out="satir_index + 1"/></td>
+                                        <td><span t-field="satir.is_kalemi"/></td>
+                                        <td class="text-center"><span t-field="satir.birim"/></td>
+                                        <td class="text-end"><span t-field="satir.miktar"/></td>
+                                        <td class="text-end"><span t-field="satir.birim_fiyat"/></td>
+                                        <td class="text-center">
+                                            <span t-out="'%.2f' % satir.kesinti_yuzdesi"/> %
+                                        </td>
+                                        <td class="text-end"><span t-field="satir.toplam"/></td>
+                                    </tr>
+                                </t>
+                                <tr t-if="not doc.satir_ids">
+                                    <td colspan="7" class="text-center text-muted">
+                                        Hakediş satırı girilmemiş.
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="6" class="text-end"><strong>Brüt Toplam</strong></td>
+                                    <td class="text-end"><strong><span t-field="doc.brut_toplam"/></strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" class="text-end"><strong>Kesinti Tutarı</strong></td>
+                                    <td class="text-end"><strong>- <span t-field="doc.kesinti_tutari"/></strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" class="text-end"><strong>Net Ödenecek Tutar</strong></td>
+                                    <td class="text-end">
+                                        <strong><span t-field="doc.net_tutar"
+                                                      t-options="{'widget': 'monetary'}"/></strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <div t-if="doc.aciklama" style="margin-top: 1rem;">
+                            <h4>Açıklama</h4>
+                            <p t-field="doc.aciklama"/>
+                        </div>
+                        <div class="oe_structure"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
