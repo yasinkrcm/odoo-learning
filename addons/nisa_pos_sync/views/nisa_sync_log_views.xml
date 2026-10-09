@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="nisa_sync_log_view_list" model="ir.ui.view">
+        <field name="name">nisa.sync.log.list</field>
+        <field name="model">nisa.sync.log</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="date"/>
+                <field name="product_tmpl_id"/>
+                <field name="product_name" optional="hide"/>
+                <field name="operation"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'success'"
+                       decoration-danger="status == 'failed'"/>
+                <field name="message"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="nisa_sync_log_view_form" model="ir.ui.view">
+        <field name="name">nisa.sync.log.form</field>
+        <field name="model">nisa.sync.log</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="operation"/>
+                            <field name="status"/>
+                        </group>
+                        <group>
+                            <field name="product_tmpl_id"/>
+                            <field name="product_name"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="message" nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="nisa_sync_log_view_search" model="ir.ui.view">
+        <field name="name">nisa.sync.log.search</field>
+        <field name="model">nisa.sync.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_name"/>
+                <field name="product_tmpl_id"/>
+                <field name="message"/>
+                <filter name="failed" string="Başarısız" domain="[('status', '=', 'failed')]"/>
+                <filter name="success" string="Başarılı" domain="[('status', '=', 'success')]"/>
+                <separator/>
+                <filter name="push" string="Odoo → POS" domain="[('operation', '=', 'push')]"/>
+                <filter name="webhook_sale" string="POS → Odoo (Satış)"
+                        domain="[('operation', '=', 'webhook_sale')]"/>
+                <group>
+                    <filter name="group_operation" string="İşlem Tipi"
+                            context="{'group_by': 'operation'}"/>
+                    <filter name="group_status" string="Durum"
+                            context="{'group_by': 'status'}"/>
+                    <filter name="group_date" string="Gün"
+                            context="{'group_by': 'date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_nisa_sync_log" model="ir.actions.act_window">
+        <field name="name">Senkronizasyon Logları</field>
+        <field name="res_model">nisa.sync.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_nisa_pos_root" name="NISA POS" sequence="90"
+              groups="base.group_user"/>
+    <menuitem id="menu_nisa_sync_log" name="Senkronizasyon Logları"
+              parent="menu_nisa_pos_root" action="action_nisa_sync_log" sequence="10"/>
+</odoo>
