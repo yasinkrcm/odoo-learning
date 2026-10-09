@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Odoo -> POS: gönderim adresi. Varsayılan: aynı Odoo üzerindeki mock endpoint.
+         Gerçek POS için bunu POS API adresiyle değiştir. -->
+    <record id="param_api_url" model="ir.config_parameter">
+        <field name="key">nisa_pos_sync.api_url</field>
+        <field name="value">http://localhost:8069/nisa_pos_sync/mock/products</field>
+    </record>
+    <!-- Odoo -> POS: X-API-Key header'ı olarak gönderilir (boşsa gönderilmez). -->
+    <record id="param_api_key" model="ir.config_parameter">
+        <field name="key">nisa_pos_sync.api_key</field>
+        <field name="value"></field>
+    </record>
+    <!-- POS -> Odoo: webhook anahtarı. BOŞ KALIRSA webhook tüm istekleri reddeder. -->
+    <record id="param_webhook_key" model="ir.config_parameter">
+        <field name="key">nisa_pos_sync.webhook_key</field>
+        <field name="value"></field>
+    </record>
+    <!-- Mock endpoint açık/kapalı ('1' = açık). Canlıda '0' yap. -->
+    <record id="param_mock_enabled" model="ir.config_parameter">
+        <field name="key">nisa_pos_sync.mock_enabled</field>
+        <field name="value">1</field>
+    </record>
+</odoo>
