@@ -1,0 +1,59 @@
+<odoo>
+    <!-- Ekip: liste -->
+    <record id="view_buksu_ekip_list" model="ir.ui.view">
+        <field name="name">buksu.ekip.list</field>
+        <field name="model">buksu.ekip</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="sorumlu_id" optional="show"/>
+                <field name="aciklama" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Ekip: form -->
+    <record id="view_buksu_ekip_form" model="ir.ui.view">
+        <field name="name">buksu.ekip.form</field>
+        <field name="model">buksu.ekip</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Pasif" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Örn: Beton Demir Ekibi"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="sorumlu_id"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="aciklama"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_buksu_ekip" model="ir.actions.act_window">
+        <field name="name">Hakediş Ekipleri</field>
+        <field name="res_model">buksu.ekip</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                İlk taşeron ekibini oluşturun
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_buksu_ekip"
+              name="Hakediş Ekipleri"
+              parent="menu_buksu_hakedis_root"
+              action="action_buksu_ekip"
+              sequence="20"/>
+</odoo>
