@@ -1,0 +1,33 @@
+<odoo>
+    <record id="view_project_form_inherit_buksu_hakedis" model="ir.ui.view">
+        <field name="name">project.project.form.buksu.hakedis</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button class="oe_stat_button" type="object"
+                        name="action_view_hakedis_donem" icon="fa-money">
+                    <field name="hakedis_donem_sayisi" widget="statinfo" string="Hakediş"/>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page name="hakedis_donemleri" string="Hakediş Dönemleri">
+                    <field name="hakedis_donem_ids">
+                        <list>
+                            <field name="name"/>
+                            <field name="ekip_id"/>
+                            <field name="tarih_baslangic" optional="show"/>
+                            <field name="tarih_bitis" optional="show"/>
+                            <field name="net_tutar" sum="Net Toplam"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="durum" widget="badge"
+                                   decoration-info="durum == 'taslak'"
+                                   decoration-warning="durum == 'onaylandi'"
+                                   decoration-success="durum == 'odendi'"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
