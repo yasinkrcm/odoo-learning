@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_buksu_saha_talep_wizard_form" model="ir.ui.view">
+        <field name="name">buksu.saha.talep.wizard.form</field>
+        <field name="model">buksu.saha.talep.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Saha Malzeme Talebi">
+                <group>
+                    <group>
+                        <field name="proje_id"/>
+                        <field name="hedef_saha_depo_id"/>
+                        <field name="kaynak_depo_id"/>
+                    </group>
+                    <group>
+                        <field name="sorumlu_ekip"/>
+                        <field name="talep_tarihi"/>
+                    </group>
+                </group>
+                <notebook>
+                    <page string="Talep Edilen Malzemeler">
+                        <field name="satir_ids">
+                            <list editable="bottom">
+                                <field name="urun_id"/>
+                                <field name="miktar"/>
+                                <field name="uom_id" readonly="1"/>
+                                <field name="mevcut_stok" readonly="1"/>
+                            </list>
+                        </field>
+                    </page>
+                    <page string="Açıklama">
+                        <field name="aciklama" placeholder="Talep nedeni / teslim notu..."/>
+                    </page>
+                </notebook>
+                <footer>
+                    <button name="action_onayla" string="Talebi Onayla ve Transfer Oluştur"
+                            type="object" class="btn-primary" data-hotkey="q"/>
+                    <button string="İptal" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Saha ekibinin Inventory menüsünden ulaşacağı action -->
+    <record id="action_buksu_saha_talep" model="ir.actions.act_window">
+        <field name="name">Saha Malzeme Talebi</field>
+        <field name="res_model">buksu.saha.talep.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_buksu_saha_stok_root"
+              name="Saha Stok"
+              parent="stock.menu_stock_root"
+              sequence="15"/>
+
+    <menuitem id="menu_buksu_saha_talep"
+              name="Malzeme Talebi"
+              parent="menu_buksu_saha_stok_root"
+              action="action_buksu_saha_talep"
+              sequence="10"/>
+
+    <menuitem id="menu_buksu_saha_depolar"
+              name="Saha Depoları"
+              parent="menu_buksu_saha_stok_root"
+              action="action_saha_depo_listesi"
+              sequence="20"/>
+</odoo>

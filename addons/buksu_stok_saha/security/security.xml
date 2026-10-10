@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Saha ekibi: kendi projesine ait hareketleri görür -->
+    <record id="group_buksu_saha_user" model="res.groups">
+        <field name="name">Saha Ekibi Kullanıcısı</field>
+    </record>
+
+    <!-- Depo sorumlusu: tüm saha hareketlerini görür ve yönetir -->
+    <record id="group_buksu_saha_depo_yoneticisi" model="res.groups">
+        <field name="name">Saha Depo Sorumlusu</field>
+        <field name="implied_ids" eval="[(4, ref('group_buksu_saha_user'))]"/>
+    </record>
+
+    <!-- Saha ekibi: projeye atanan saha ekibi kullanıcılarının hareketlerini görür -->
+    <record id="rule_picking_saha_user" model="ir.rule">
+        <field name="name">Saha: proje fişleri (kendi projesi)</field>
+        <field name="model_id" ref="stock.model_stock_picking"/>
+        <field name="groups" eval="[(4, ref('group_buksu_saha_user'))]"/>
+        <field name="domain_force">[
+            '|',
+                ('proje_id', '=', False),
+                ('proje_id.saha_kullanici_ids', 'in', [user.id])
+        ]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="rule_move_saha_user" model="ir.rule">
+        <field name="name">Saha: proje hareketleri (kendi projesi)</field>
+        <field name="model_id" ref="stock.model_stock_move"/>
+        <field name="groups" eval="[(4, ref('group_buksu_saha_user'))]"/>
+        <field name="domain_force">[
+            '|',
+                ('proje_id', '=', False),
+                ('proje_id.saha_kullanici_ids', 'in', [user.id])
+        ]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <!-- Depo sorumlusu: tüm kayıtları görür, yöneticiler için geniş yetki -->
+    <record id="rule_picking_depo_yoneticisi" model="ir.rule">
+        <field name="name">Saha: proje fişleri (depo sorumlusu, tümü)</field>
+        <field name="model_id" ref="stock.model_stock_picking"/>
+        <field name="groups" eval="[(4, ref('group_buksu_saha_depo_yoneticisi'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="rule_move_depo_yoneticisi" model="ir.rule">
+        <field name="name">Saha: proje hareketleri (depo sorumlusu, tümü)</field>
+        <field name="model_id" ref="stock.model_stock_move"/>
+        <field name="groups" eval="[(4, ref('group_buksu_saha_depo_yoneticisi'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+</odoo>

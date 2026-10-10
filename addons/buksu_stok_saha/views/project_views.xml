@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Proje formu: saha depoları + malzeme hareketleri akıllı butonları -->
+    <record id="view_project_form_saha" model="ir.ui.view">
+        <field name="name">project.project.form.saha</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button type="object" name="action_view_malzeme_hareketleri"
+                        class="oe_stat_button" icon="fa-exchange"
+                        invisible="malzeme_hareket_sayisi == 0">
+                    <field name="malzeme_hareket_sayisi" widget="statinfo"
+                           string="Malzeme Hareketi"/>
+                </button>
+                <button type="action" name="%(buksu_stok_saha.action_saha_depo_listesi)d"
+                        class="oe_stat_button" icon="fa-warehouse">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Saha Depoları</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Proje ayarları: saha ekibi kullanıcı ataması -->
+    <record id="view_project_form_saha_kullanici" model="ir.ui.view">
+        <field name="name">project.project.form.saha.kullanici</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="saha_stok" string="Saha Stok">
+                    <group>
+                        <field name="saha_kullanici_ids" widget="many2many_tags"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

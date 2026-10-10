@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- stock.move list: proje ve ekip kolonları -->
+    <record id="view_move_tree_saha" model="ir.ui.view">
+        <field name="name">stock.move.list.saha</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock.view_move_tree"/>
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="proje_id" optional="show"/>
+                <field name="sorumlu_ekip" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- stock.move search: raporlama filtreleri ve gruplama -->
+    <record id="view_move_search_saha" model="ir.ui.view">
+        <field name="name">stock.move.search.saha</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock.view_move_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="proje_id"/>
+                <field name="sorumlu_ekip"/>
+                <filter string="Saha Malzeme Hareketleri" name="filter_saha_hareket"
+                        domain="[('proje_id', '!=', False)]"/>
+                <group>
+                    <filter string="Projeye göre grupla" name="group_proje"
+                            context="{'group_by': 'proje_id'}"/>
+                    <filter string="Ürüne göre grupla" name="group_urun"
+                            context="{'group_by': 'product_id'}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Proje bazlı malzeme hareket raporu (server action yerine
+         raporlanabilir action window; proje formundaki butondan açılır) -->
+    <record id="action_proje_malzeme_hareketleri" model="ir.actions.act_window">
+        <field name="name">Proje Malzeme Hareketleri</field>
+        <field name="res_model">stock.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('picking_id.proje_id', '=', active_id)]</field>
+        <field name="context">{
+            'search_default_filter_saha_hareket': 1,
+            'default_proje_id': active_id,
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Bu proje için henüz malzeme hareketi yok</p>
+            <p>Saha depolarına yapılan malzeme transferleri burada listelenir.</p>
+        </field>
+    </record>
+</odoo>

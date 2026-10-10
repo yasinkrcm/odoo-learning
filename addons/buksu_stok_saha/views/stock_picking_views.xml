@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- stock.picking form: proje + sorumlu ekip -->
+    <record id="view_picking_form_saha" model="ir.ui.view">
+        <field name="name">stock.picking.form.saha</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='scheduled_date']" position="after">
+                <field name="proje_id"/>
+                <field name="sorumlu_ekip"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- stock.picking search: proje filtresi ve gruplama -->
+    <record id="view_picking_search_saha" model="ir.ui.view">
+        <field name="name">stock.picking.search.saha</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_internal_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="proje_id"/>
+                <field name="sorumlu_ekip"/>
+                <filter string="Saha Hareketleri" name="filter_saha"
+                        domain="[('proje_id', '!=', False)]"/>
+                <group>
+                    <filter string="Projeye göre grupla" name="group_proje"
+                            context="{'group_by': 'proje_id'}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

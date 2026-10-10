@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_buksu_saha_talep_wizard_user,buksu.saha.talep.wizard.user,model_buksu_saha_talep_wizard,group_buksu_saha_user,1,1,1,1
+access_buksu_saha_talep_wizard_satir_user,buksu.saha.talep.wizard.satir.user,model_buksu_saha_talep_wizard_satir,group_buksu_saha_user,1,1,1,1
+access_buksu_saha_talep_wizard_manager,buksu.saha.talep.wizard.manager,model_buksu_saha_talep_wizard,group_buksu_saha_depo_yoneticisi,1,1,1,1
+access_buksu_saha_talep_wizard_satir_manager,buksu.saha.talep.wizard.satir.manager,model_buksu_saha_talep_wizard_satir,group_buksu_saha_depo_yoneticisi,1,1,1,1

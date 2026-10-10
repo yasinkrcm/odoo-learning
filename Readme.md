@@ -12,6 +12,8 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`sale_custom`** | Sales | Classical model inheritance (`sale.order`), view inheritance via `<xpath>`, custom priority & internal notes, header action buttons. | `sale` |
 | **`buksu_hakedis`** | Project & Accounting | Construction / traffic site subcontractor progress billing (*Hakediş*). Multi-team progress tracking (`buksu.hakedis.donem`, `buksu.hakedis.satir`, `buksu.ekip`), strict forward-only status workflow (`taslak` → `onaylandi` → `odendi`), dynamic line calculations (metraj, unit price, deductions), vendor bill creation (`account.move`), sequence auto-numbering, `project.project` smart button integration, and official QWeb PDF progress reports. | `base`, `project`, `web`, `account` |
 | **`nisa_pos_sync`** | Inventory & POS | Bidirectional product and stock synchronization with external POS systems. Product template extension (`external_pos_id`, `nisa_stock_qty`), HMAC-secured atomic webhook deductions with savepoint concurrency protection, audit sync log model (`nisa.sync.log`), system parameters configuration, and built-in mock POS server for testing. | `product` |
+| **`buksu_stok_saha`** | Inventory & Project | Field material & stock management for construction/traffic projects. Saha depoları (`stock.location.is_saha_depo`), project & team-linked pickings (`stock.picking.proje_id`, `sorumlu_ekip`), project-based stock move reporting (smart buttons + search filters), material request wizard (`TransientModel`) that auto-creates outgoing transfers, and record-rule security split (saha ekibi: own projects only / depo sorumlusu: all). | `stock`, `project` |
+
 | **`odoo_rpc.py`** | Integration | External XML-RPC Python client demonstrating CRUD operations, domain filters, server-side aggregation (`read_group`), One2many command tuples, and model method execution. | `xmlrpc.client`, `python-dotenv` |
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
 
@@ -80,24 +82,46 @@ odoo-project/
     │       ├── ir.model.access.csv
     │       └── security.xml
     │
-    └── nisa_pos_sync/              # External POS & Stock Synchronization
+    ├── nisa_pos_sync/              # External POS & Stock Synchronization
+    │   ├── __init__.py
+    │   ├── __manifest__.py
+    │   ├── data/
+    │   │   └── ir_config_parameter.xml # API URLs and authentication keys
+    │   ├── models/
+    │   │   ├── __init__.py
+    │   │   ├── product_template.py # POS attributes & outbound push methods
+    │   │   ├── product_product.py  # Variant helper bindings
+    │   │   └── nisa_sync_log.py    # Audit logging for sync events
+    │   ├── controllers/
+    │   │   ├── __init__.py
+    │   │   ├── webhook.py          # Inbound sale webhook with atomic stock drop
+    │   │   └── mock_pos.py         # Mock server for sandbox POS testing
+    │   ├── views/
+    │   │   ├── product_template_views.xml
+    │   │   └── nisa_sync_log_views.xml
+    │   └── security/
+    │       └── ir.model.access.csv
+    │
+    └── buksu_stok_saha/            # Field Material & Stock Management (Saha Stok)
         ├── __init__.py
         ├── __manifest__.py
-        ├── data/
-        │   └── ir_config_parameter.xml # API URLs and authentication keys
         ├── models/
         │   ├── __init__.py
-        │   ├── product_template.py # POS attributes & outbound push methods
-        │   ├── product_product.py  # Variant helper bindings
-        │   └── nisa_sync_log.py    # Audit logging for sync events
-        ├── controllers/
+        │   ├── stock_location.py   # is_saha_depo flag, project link, [Saha] display name
+        │   ├── stock_picking.py    # proje_id & sorumlu_ekip on transfers
+        │   ├── stock_move.py       # stored related project/team columns on moves
+        │   └── project_project.py  # saha_kullanici_ids, move counter & smart buttons
+        ├── wizard/
         │   ├── __init__.py
-        │   ├── webhook.py          # Inbound sale webhook with atomic stock drop
-        │   └── mock_pos.py         # Mock server for sandbox POS testing
+        │   ├── saha_talep_wizard.py        # Material request wizard → auto picking
+        │   └── saha_talep_wizard_views.xml # Wizard form + "Saha Stok" menu
         ├── views/
-        │   ├── product_template_views.xml
-        │   └── nisa_sync_log_views.xml
+        │   ├── stock_location_views.xml
+        │   ├── stock_picking_views.xml
+        │   ├── stock_move_views.xml        # Move list/search extensions + report action
+        │   └── project_views.xml           # Project smart buttons & team assignment
         └── security/
+            ├── security.xml                # Groups + record rules (saha ekibi / depo sorumlusu)
             └── ir.model.access.csv
 ```
 
@@ -134,6 +158,7 @@ Create a database (e.g. `odoo19_dev`). Keep the database name, admin email, and 
    - **Sale Custom** (`sale_custom`)
    - **Buksu Hakediş Takibi** (`buksu_hakedis`)
    - **NISA POS Sync** (`nisa_pos_sync`)
+   - **Buksu Saha Stok Yönetimi** (`buksu_stok_saha` - requires Inventory `stock` and Project `project`)
 
 ---
 
@@ -230,6 +255,31 @@ Demonstrates clean, modular extension of standard Odoo core applications without
 - Adds `x_priority` (Selection) and `x_internal_note` (Text) to `sale.order`.
 - Leverages `<xpath>` syntax to inject custom widgets and buttons directly into standard quotation form and list views.
 - Implements a **Set Urgent** header button that programmatically transitions priority states.
+
+---
+
+### 5. `buksu_stok_saha` (Field Material & Stock Management)
+
+Customizes the standard Inventory app for **project-based field material logistics** — construction/traffic sites that consume materials from a central warehouse into temporary, per-project site depots.
+
+- **Field Warehouses (`stock.location` extension):**
+  - `is_saha_depo` flag marks a location as a temporary, project-based field depot.
+  - `proje_id` binds the depot to a `project.project`.
+  - `_compute_display_name` override prefixes `[Saha]` so field depots are visually distinguishable in every location dropdown (Odoo 19 removed `name_get` in favor of `_compute_display_name`).
+- **Project-Linked Transfers (`stock.picking` / `stock.move` extensions):**
+  - `stock.picking.proje_id` (Many2one → `project.project`, indexed) and `sorumlu_ekip` (responsible field team) attach every material movement to a project.
+  - `stock.move` exposes both as **stored related fields** (`store=True`), enabling indexed `read_group`/report aggregation and list-view columns without JOINs at render time.
+- **Project-Level Reporting:**
+  - Smart buttons on the native Project form: material-move counter (via `search_count` on `picking_id.proje_id`) and a filtered `ir.actions.act_window` over `stock.move` (reportable list view with project/product grouping and "Saha Malzeme Hareketleri" filters).
+  - Dedicated "Saha Depoları" action window listing all flagged locations.
+- **Material Request Wizard (`buksu.saha.talep.wizard` — `TransientModel`):**
+  - Field crews enter "product + quantity" lines against a project and target field depot; available stock per line is computed live from `stock.quant.available_quantity`.
+  - On approval, an outgoing `stock.picking` is created in one atomic `create()` (moves batched via `(0, 0, ...)` commands) with `action_confirm()` applied, and the user is redirected to the generated transfer.
+  - Auto-fill UX: selecting a project pre-fills its registered field depot as destination.
+- **Two-Tier Security (groups + `ir.rule` record rules):**
+  - **Saha Ekibi Kullanıcısı:** sees only pickings/moves whose project has them in `project.project.saha_kullanici_ids` (explicit M2M — Odoo 19's `project.project` no longer exposes `user_ids`), via group-scoped record rules on both `stock.picking` and `stock.move`.
+  - **Saha Depo Sorumlusu:** implied manager group with a permissive `[(1, '=', 1)]` rule granting full read/write/unlink across all field movements.
+  - Wizard models ship their own ACLs for both groups (transient models still require explicit `ir.model.access` entries).
 
 ---
 
@@ -332,6 +382,12 @@ curl -X POST http://localhost:8069/nisa_pos_sync/webhook/sale \
 - **`base.automation` Architecture:** Automated actions no longer store inline Python code. They must be linked to an `ir.actions.server` record via `action_server_ids`.
 - **Logging Destination:** `log(...)` statements inside automated actions write to `ir.logging` in the database (*Settings* → *Technical* → *Logging*), not to the Docker container console output.
 - **Controller Route Decorators:** Use `@http.route(type='jsonrpc')`. The previous `type='json'` is deprecated.
+- **`stock.move.name` Removed:** Odoo 19 no longer has a `name` column on `stock.move` — programmatic move creation must not pass `name` (use product reference only).
+- **`project.project.user_ids` Removed:** Project members are no longer exposed as a `user_ids` M2M on the project; extend the model with your own M2M if you need user↔project assignment (see `buksu_stok_saha.saha_kullanici_ids`).
+- **`name_get()` Replaced:** Override `_compute_display_name` (with `@api.depends`) instead of the removed `name_get` API.
+- **Location List View ID:** The stock location list view is `stock.view_location_tree2` — `view_location_tree` no longer exists and inheriting it fails at install time.
+- **Search View RelaxNG:** Inside `<search>`, `<group>` elements must not carry `expand` attributes and must only contain filters — inline `expand="0"` groups fail RNG validation.
+- **Verify Against Installed Sources:** Never code integrations from memory of older versions — grep the actual `/usr/lib/python3/dist-packages/odoo/addons` sources inside the container before inheriting views or fields (`docker compose exec web grep -rn "..." /usr/lib/python3/dist-packages/odoo/addons/stock/`).
 
 ---
 

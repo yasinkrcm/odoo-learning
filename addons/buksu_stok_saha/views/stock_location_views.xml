@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- stock.location form: saha deposu işareti ve proje -->
+    <record id="view_location_form_saha" model="ir.ui.view">
+        <field name="name">stock.location.form.saha</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_location_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='removal_strategy_id']" position="after">
+                <field name="is_saha_depo"/>
+            </xpath>
+            <xpath expr="//group[@name='additional_info']" position="after">
+                <group string="Saha Deposu Bilgileri" name="group_saha_depo"
+                       invisible="not is_saha_depo">
+                    <field name="proje_id"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- stock.location list: saha deposu kolonu -->
+    <record id="view_location_list_saha" model="ir.ui.view">
+        <field name="name">stock.location.list.saha</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_location_tree2"/>
+        <field name="arch" type="xml">
+            <field name="usage" position="after">
+                <field name="is_saha_depo" optional="show"/>
+                <field name="proje_id" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Saha depoları listesi + filtre: Proje formundaki buton bu action'ı açar -->
+    <record id="action_saha_depo_listesi" model="ir.actions.act_window">
+        <field name="name">Saha Depoları</field>
+        <field name="res_model">stock.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_saha_depo', '=', True)]</field>
+        <field name="context">{'default_is_saha_depo': True}</field>
+    </record>
+</odoo>
