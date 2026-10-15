@@ -1,163 +1,187 @@
-# 🚀 Canlıya Alma Rehberi (VPS + Docker + Caddy HTTPS)
+# 🚀 Canlıya Alma Rehberi (VPS + Docker)
 
-Hedef: `https://odoo.yasinkaracam.com` üzerinde, geliştirme verisiyle çalışan kalıcı bir Odoo 19 kurulumu.
+Hedef: özel bir domain (`odoo.example.com`) üzerinde, geliştirme verisiyle çalışan kalıcı bir Odoo 19 kurulumu.
 
 ```
-Tarayıcı → Caddy (Let's Encrypt TLS) → odoo (workers=1, proxy_mode=True) → postgres (host'a açık değil)
+Tarayıcı → Reverse proxy (Caddy veya nginx) → odoo (127.0.0.1:8069) → postgres (host'a açık değil)
 ```
+
+> Sunucuda **zaten nginx + başka siteler varsa** Kurulum B (nginx) yolunu izle;
+> Caddy'yi 80/443'te başlatma — mevcut siteleri bozar.
 
 ---
 
 ## 0. Ön Koşullar
 
-- VPS: Ubuntu 22.04/24.04, en az **2 GB RAM + 20 GB disk**
-- DNS: `odoo.yasinkaracam.com` için **A record → sunucu IP**; doğrula: `dig +short odoo.yasinkaracam.com`
-- Güvenlik duvarında 80/443 açık: `sudo ufw allow 80,443/tcp`
+- VPS: Ubuntu, en az **2 GB RAM + 20 GB disk**
+- DNS: `<odoo-domain>` için **A record → sunucu IP**; doğrula: `dig +short <odoo-domain>`
+- 80/443 erişilebilir (sadece Kurulum A: Caddy)
 
-## 1. Sunucu Hazırlığı
+---
 
-```bash
-sudo apt update && sudo apt upgrade -y
-
-# Docker kurulumu (resmi script)
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER && newgrp docker
-docker --version
-
-# Dosya yapısı
-sudo mkdir -p /opt/odoo && cd /opt/odoo
-```
-
-Repo'daki dosyaları sunucuya taşı:
+## 1. Dosyalar ve Sunucu Hazırlığı
 
 ```bash
 # local (Mac) tarafında:
 git clone https://github.com/yasinkrcm/odoo-learning.git /tmp/odoo-learning
-rsync -av --delete /tmp/odoo-learning/addons/ user@<sunucu-ip>:/opt/odoo/addons/
-rsync -av /tmp/odoo-learning/deploy/ user@<sunucu-ip>:/opt/odoo/
+
+# sunucuya taşı (home dizini de olur, /opt kök izni gerekir):
+rsync -av --delete /tmp/odoo-learning/addons/ user@<sunucu-ip>:~/odoo-live/addons/
+rsync -av /tmp/odoo-learning/deploy/ user@<sunucu-ip>:~/odoo-live/
 ```
 
-> **Neden `deploy/` klasörü?** Repo kökündeki `docker-compose.yml` geliştirme içindir: varsayılan `odoo/odoo` şifreleri, TLS yok ve DB host'a açık. Canlıda **`/opt/odoo/docker-compose.yml`** (deploy klasöründeki) kullanılır — DB host'a hiç açılmaz, Caddy ters proxy + otomatik sertifika sağlar.
+`docker-compose.yml` (deploy/ içindeki) varsayılan **boş-VPS (Kurulum A)** profillidir:
+DB host'a kapalı, healthcheck'li, volumes izole adlı. Kurulum B için aşağıdaki değişiklikleri uygula.
+
+---
 
 ## 2. Secrets — bizzat sunucuda üret
 
 ```bash
-cd /opt/odoo
-cp deploy/.env.example .env
-openssl rand -hex 24        # çıktıyı kopyala → POSTGRES_PASSWORD'e yaz
+cd ~/odoo-live
+openssl rand -hex 24        # çıktı → .env POSTGRES_PASSWORD
+openssl rand -base64 32     # çıktı → odoo.conf admin_passwd
+cp deploy/.env.example .env   # sonra nano ile doldur
 nano .env
+sed -i "s/^admin_passwd.*/admin_passwd = <GENERATED>/" odoo.conf
+chmod 600 .env    # ⚠️ .env 600, odoo.conf ise MUTLAKA 644 kalmalı!
 ```
 
-`.env` içeriği:
+**Kritik tuzak:** `odoo.conf`'ta `db_password` satırı **yoktur/onaylanmaz**.
+wait-for-psql.py conf'taki değere öncelik verir; `db_password = odoo` bırakıp
+.env'de güçlü şifre üretirsen konteyner sonsuz "password authentication failed"
+döngüsüne girer. Conf'ta db_* boş bırak, .env (HOST/USER/PASSWORD) yönetsin.
 
-```ini
-POSTGRES_USER=odoo
-POSTGRES_PASSWORD=<openssl çıktısı>
-SITE_DOMAIN=odoo.yasinkaracam.com
-```
+---
 
-`odoo.conf` içindeki master şifresini güncelle:
+## 3. Kurulum A — Boş VPS (Caddy otomatik HTTPS)
 
 ```bash
-MASTER=$(openssl rand -base64 32)
-sed -i "s/^admin_passwd.*/admin_passwd = $MASTER/" /opt/odoo/odoo.conf
-echo "Master password: $MASTER"   # → parola yöneticine kaydet; sonra bu echo'u history'den temizle
+docker compose version
+docker compose up -d db
+docker compose up -d web
+docker compose logs caddy      # sertifika "obtained successfully"
+curl -I https://<odoo-domain>  # 200 beklenir
 ```
 
-> 📌 `.env` ve `odoo.conf` git'e girmez — şifreler yalnızca sunucuda yaşar.
+---
 
-## 3. Veri Taşıma (local dev → prod)
+## 4. Kurulum B — nginx zaten var (80/443 dolu)
 
-### a) Local'de dök al
+1. **Compose'da caddy servisini kaldır**, web `ports` bilgisine ekle:
+
+```yaml
+    ports:
+      - "127.0.0.1:8069:8069"
+```
+
+2. nginx vhost ekle (sudo gerekir) `/etc/nginx/sites-available/odoo.example.com`:
+
+```nginx
+server {
+    listen 80;
+    server_name odoo.example.com;
+    location /static/ { proxy_pass http://127.0.0.1:8069; }
+    location / {
+        proxy_pass http://127.0.0.1:8069;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        client_max_body_size 100m;
+    }
+}
+```
+
+3. `sudo nginx -t && sudo systemctl reload nginx`
+4. Sertifika: `sudo certbot --nginx -d odoo.example.com`
+5. Odoo.conf'ta `proxy_mode = True` (deploy/odoo.conf zaten içeriyor).
+
+> Mevcut vhost'ların hiçbirine dokunma; yalnızca yeni dosya ekle.
+
+---
+
+## 5. Veri Taşıma (local dev → prod)
+
+### a) Local'de dök al (gerçek yollarla!)
+
+Docker odoo image'ında filestore `**/var/lib/odoo/filestore/<DB ADI>/**` altında — `.local/share` DEĞİL.
 
 ```bash
 cd ~/odoo-project
-docker compose exec -T db pg_dump -U odoo -d odoo19_dev --no-owner > /tmp/odoo19_dev.sql
+# Hangi DB'de gerçek veri var kontrol et (bu proje: yasin-db):
+docker compose exec -T db psql -U odoo -l | grep -vE "postgres|template|^\s*$"
+docker compose exec -T db psql -U odoo -d yasin-db -tAc \
+  "SELECT (SELECT count(*) FROM res_partner), (SELECT count(*) FROM product_template), (SELECT count(*) FROM sale_order)"
 
-# Filestore (ekler/fotoğraflar) ayrıca şart:
-docker compose exec web tar cz -C /var/lib/odoo .local/share/Odoo/filestore/odoo19_dev > /tmp/filestore.tgz
+docker compose exec -T db pg_dump -U odoo -d yasin-db --no-owner > /tmp/yasin-db.sql
+docker compose exec -T web tar czf - -C /var/lib/odoo filestore/yasin-db > /tmp/filestore.tgz
 ```
 
 ### b) Sunucuya gönder
 
 ```bash
-scp /tmp/odoo19_dev.sql /tmp/filestore.tgz user@<sunucu-ip>:/opt/odoo/
+rsync -av /tmp/yasin-db.sql /tmp/filestore.tgz user@<sunucu-ip>:~/odoo-live/
 ```
 
 ### c) Sunucuda restore
 
 ```bash
-cd /opt/odoo
-docker compose up -d db        # önce sadece DB
+cd ~/odoo-live
+docker compose up -d db
+# healthcheck bekle:
+for i in $(seq 1 20); do docker inspect -f '{{.State.Health.Status}}' odoo-live-db | grep -q healthy && break; sleep 2; done
 
-createdb_prod=$(docker compose exec -T db createdb -U odoo odoo_prod 2>&1)
-docker compose exec -T db psql -U odoo -d odoo_prod < /opt/odoo/odoo19_dev.sql
+docker compose exec -T db createdb -U odoo odoo_prod
+docker compose exec -T db psql -U odoo -q -d odoo_prod < yasin-db.sql
 
-# Filestore geri yükle (konteyner içine)
-docker compose up -d web && sleep 10
-W=$(docker compose ps -q web)
-docker exec -i $W mkdir -p /var/lib/odoo/.local/share/Odoo/filestore/odoo_prod
-docker exec -i $W \
-  tar xz -C /var/lib/odoo/.local/share/Odoo/filestore/odoo_prod --strip=0 \
-  < /opt/odoo/filestore.tgz
+docker compose up -d web
+# Filestore: adını odoo_prod'a çevirip aç (GNU tar --transform)
+docker exec -i <web-container> tar xzf - -C /var/lib/odoo \
+  --transform "s|^filestore/yasin-db|filestore/odoo_prod|" < filestore.tgz
+docker exec <web-container> chown -R odoo:odoo /var/lib/odoo/filestore/odoo_prod
 ```
 
-> `filestore.tgz` içindeki yol `.local/share/...` ile başlıyor olmalı (a'daki tar komutu bu şekilde üretir). Restore sonrası `docker compose restart web` ve dosya sahipliği: `docker exec $W chown -R odoo: /var/lib/odoo/.local/share/Odoo/filestore/odoo_prod`.
+### d) Modülleri yükselt
 
-### d) Modülleri doğrula / yükselt
+> ⚠️ `docker compose exec web` **değil** — çalışan web 8069'u tuttuğu için
+> `exec` içindeki odoo crash olur ("Address already in use"). `run --rm` kullan:
 
 ```bash
-docker compose exec web odoo -c /etc/odoo/odoo.conf -d odoo_prod \
+docker compose run --rm web odoo -c /etc/odoo/odoo.conf -d odoo_prod \
   -u my_first_module,sale_custom,buksu_hakedis,nisa_pos_sync,buksu_stok_saha,telegram_notify,mini_helpdesk \
   --stop-after-init
 docker compose restart web
 ```
 
-`dbfilter = ^odoo_prod$` + `list_db = False` sayesinde URL tek DB'ye bağlanır ve DB listeleme kapatılır.
+`dbfilter = ^odoo_prod$` + `list_db = False` sayesinde URL tek DB'ye bağlanır.
 
-## 4. Caddy ile HTTPS
+---
 
-```bash
-docker compose up -d
-docker compose ps              # üç servis running/healthy olmalı
-docker compose logs caddy      # "certificate obtained successfully" bekle
-```
+## 6. Canlıda Yapılması Gerekenler
 
-Sertifika otomatik gelir; `odoo.conf`'daki `proxy_mode = True` şart (reverse proxy arkasında zorunlu). Sonra:
+- **Admin şifresi:** dev DB'den gelen şifreyi güçlendir
+- **System Parameters:** `telegram_notify.bot_token/chat_id`, `nisa_pos_sync.webhook_key` (güçlü değer), `nisa_pos_sync.api_url`, `mock_enabled` **KAPAT**
+- Developer mode demoda kapalı olsun
+- Mail SMTP gerekiyorsa Ayarlar → Teknik → SMTP
 
-```
-https://odoo.yasinkaracam.com
-```
-
-## 5. Canlıda Yapılması Gerekenler
-
-- **Admin şifresi:** dev DB'den gelecek şifreyi güçlendir veya değiştir
-- **Sistem parametreleri:** `telegram_notify.bot_token` / `chat_id`, `nisa_pos_sync.webhook_key` (canlıda mutlaka güçlü değer ver, POS tarafına da aynısını gir), `nisa_pos_sync.api_url` (mock'u KAPAT: `mock_enabled` → boş/devre dışı)
-- **Developer mode** demo görüntüsü için kapalı olsun
-- Mail (SMTP) gerekiyorsa Ayarlar → Teknik → SMTP; aksi halde Telegram bildirimleri yeterli
-
-## 6. Günlük İşletim
+## 7. Günlük İşletim
 
 | İşlem | Komut |
 |---|---|
 | Servis durumu | `docker compose ps` |
 | Odoo logu | `docker compose logs web --tail 100 -f` |
-| Yeni modül | `docker compose exec web odoo -c /etc/odoo/odoo.conf -d odoo_prod -i <modul> --stop-after-init && docker compose restart web` |
-| Günlük DB yedeği | `docker compose exec -T db pg_dump -U odoo -d odoo_prod > /opt/odoo/backups/daily-$(date +%F).sql` (cron: `0 3 * * *`) |
-| Filestore yedeği | `docker exec $(docker compose ps -q web) tar cz -C /var/lib/odoo .local/share/Odoo/filestore/odoo_prod > /opt/odoo/backups/fs-$(date +%F).tgz` |
-| Versiyon güncelleme | `docker compose pull && docker compose up -d && docker compose exec web odoo -c /etc/odoo/odoo.conf -d odoo_prod -u all --stop-after-init` |
+| Modül yükleme | `docker compose run --rm web odoo -c /etc/odoo/odoo.conf -d odoo_prod -i <modul> --stop-after-init` |
+| Günlük DB yedeği | `docker compose exec -T db pg_dump -U odoo -d odoo_prod > backups/daily-$(date +%F).sql` (cron) |
+| Filestore yedeği | `docker exec <web-container> tar cz -C /var/lib/odoo filestore/odoo_prod > backups/fs-$(date +%F).tgz` |
 
-## 7. Sık Karşılaşılan Sorunlar
+## 8. Sık Karşılaşılan Sorunlar (bugün gerçekten yaşananlar)
 
 | Belirti | Neden | Çözüm |
 |---|---|---|
-| Caddy sertifika alamıyor | DNS yayılmamış / 80 port kapalı | `dig +short odoo...`, `ufw allow 80` |
-| `psycopg2.OperationalError` | DB şifre uyumsuzluğu | `.env` değerlerini doğrula, `docker compose down && up -d` |
-| `column ... does not exist` | Model alanı DB'ye yansımadı | ilgili modülü `-u` ile yükselt |
-| SafeMode / Age dışı hatalar HTTPS'te | `proxy_mode` eksik | `odoo.conf` kontrol + `docker compose restart web` |
-| Mail göndermiyor | SMTP yapılmamış | SMTP kur veya Telegram bildirimleriyle telafi et |
-| Cron bildirimleri beklenir | key/param eksik | System Parameters kontrol + cron "Run Manually" testi |
-
----
-
-Özet: `odoo/odoo` şifresi canlıda asla kullanılmaz; DB'ye host erişimi yoktur; master şifre ve DB şifresi rastgele üretilip sunucu dışında saklanmaz; `.env` versiyonlanmaz; yedekler cron ile düzenli, restore adımı doğrulanmış.
+| web "password authentication failed" döngüsü | `odoo.conf`'taki placeholder `db_password` env'i ezdi | conf'ta db_password satırını SİL, .env yönetsin |
+| `grep: /etc/odoo/odoo.conf: Permission denied` | conf 600 (chmod) | `chmod 644 odoo.conf` (gizli şey içermiyor) |
+| Upgrade "Address already in use" | `exec` ile upgrade denendi | `docker compose run --rm web odoo ...` |
+| restore sonrası boş filestore | tar kesintiye uğradı | `docker exec -i` ile tgz'yi tamamen yeniden aç; `du -sh` ile boyut doğrula |
+| Caddy/nginx sertifika alamıyor | DNS henüz yeni IP'yi göstermiyor | `dig +short <domain>` bekle/propagate |
+| `psycopg2.OperationalError` | DB şifre uyumsuz | `.env` değerleri + conf'tan db_* silinmiş mi bak |
+| `column ... does not exist` | model alanı DB'ye işlenmemiş | ilgili modülü `-u` ile yükselt |
+| HTTPS'te anormal davranış | `proxy_mode` eksik | `odoo.conf` kontrol + `docker compose restart web` |
