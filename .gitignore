@@ -17,7 +17,7 @@ venv/
 .venv/
 env/
 ENV/
-
+.commandcode/
 # Environment files
 .env
 .env*.local

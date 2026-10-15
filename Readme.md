@@ -1,6 +1,6 @@
 # Odoo 19 Custom Addons & Architecture: Modules, ORM, Security, POS Sync, Progress Billing & RPC
 
-A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, four fully featured custom modules covering real-world business flows (construction progress billing, retail POS stock sync, sales customization, and full-stack ORM patterns), external Python XML-RPC clients, and JSON-RPC webhooks.
+A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, four fully featured custom modules covering real-world business flows (construction progress billing, retail POS stock sync, sales customization, and full-stack ORM patterns), external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
 
 ---
 
@@ -13,9 +13,9 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`buksu_hakedis`** | Project & Accounting | Construction / traffic site subcontractor progress billing (*Hakediş*). Multi-team progress tracking (`buksu.hakedis.donem`, `buksu.hakedis.satir`, `buksu.ekip`), strict forward-only status workflow (`taslak` → `onaylandi` → `odendi`), dynamic line calculations (metraj, unit price, deductions), vendor bill creation (`account.move`), sequence auto-numbering, `project.project` smart button integration, and official QWeb PDF progress reports. | `base`, `project`, `web`, `account` |
 | **`nisa_pos_sync`** | Inventory & POS | Bidirectional product and stock synchronization with external POS systems. Product template extension (`external_pos_id`, `nisa_stock_qty`), HMAC-secured atomic webhook deductions with savepoint concurrency protection, audit sync log model (`nisa.sync.log`), system parameters configuration, and built-in mock POS server for testing. | `product` |
 | **`buksu_stok_saha`** | Inventory & Project | Field material & stock management for construction/traffic projects. Saha depoları (`stock.location.is_saha_depo`), project & team-linked pickings (`stock.picking.proje_id`, `sorumlu_ekip`), project-based stock move reporting (smart buttons + search filters), material request wizard (`TransientModel`) that auto-creates outgoing transfers, and record-rule security split (saha ekibi: own projects only / depo sorumlusu: all). | `stock`, `project` |
-
 | **`odoo_rpc.py`** | Integration | External XML-RPC Python client demonstrating CRUD operations, domain filters, server-side aggregation (`read_group`), One2many command tuples, and model method execution. | `xmlrpc.client`, `python-dotenv` |
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
+| **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
 
 ---
 
@@ -26,9 +26,10 @@ odoo-project/
 ├── docker-compose.yml              # Odoo 19 + PostgreSQL 15 environment
 ├── requirements.txt                # Local Python dependencies for RPC scripts
 ├── .env.example                    # Environment template for RPC clients
-├── .gitignore                      # Git ignore rules (macOS, Python, venv, .env)
+├── .gitignore                      # Git ignore rules (macOS, Python, venv, .env, sync.log)
 ├── odoo_rpc.py                     # XML-RPC client for automated Odoo tasks
 ├── import_customers.py             # Idempotent CSV customer importer
+├── sync_products.py                # Idempotent external API → Odoo product sync
 ├── customers.csv                   # Sample dataset for bulk import
 ├── README.md                       # Comprehensive repository documentation
 └── addons/
@@ -132,7 +133,7 @@ odoo-project/
 ### Prerequisites
 
 - [Docker & Docker Compose](https://www.docker.com/)
-- Python 3.9+ (required only if running the external RPC/import scripts)
+- Python 3.9+ (required only if running the external RPC/import/sync scripts)
 
 ### 1. Launch the Stack
 
@@ -296,6 +297,8 @@ cp .env.example .env
 # Edit .env with your local Odoo credentials and database name
 ```
 
+`requirements.txt` includes `python-dotenv` (loads `.env`) and `requests` (used by `sync_products.py`). The `.env` file is git-ignored; only `.env.example` is committed.
+
 ### 2. XML-RPC Operations (`odoo_rpc.py`)
 
 Run the script to execute CRUD queries, domain filtering, and aggregated lookups over XML-RPC:
@@ -339,7 +342,29 @@ Reads from `customers.csv` and uses search-before-write logic to ensure repeated
 python3 import_customers.py
 ```
 
-### 4. Calling Webhooks (cURL)
+### 4. External API → Odoo Product Sync (`sync_products.py`)
+
+Fetches products from an external REST API (`dummyjson.com` as a public test source) and synchronizes them into `product.template` over XML-RPC.
+
+```bash
+python3 sync_products.py
+```
+
+How it works:
+
+- **Matching key:** each external product maps to `default_code = EXT-<external id>`, so the sync can find its own records on every run.
+- **Create / update / skip:** missing products are created; existing ones are compared field by field (`name`, `list_price`, `description_sale`) and only changed fields are written; identical records are counted as unchanged.
+- **Idempotent:** running the script repeatedly never produces duplicates. The second run reports `created: 0, unchanged: N`.
+- **Fault tolerant:** every record is processed inside its own `try/except`. A bad record is logged and counted as `failed`, and the run continues.
+- **Observability:** logs go to both the console and `sync.log` (git-ignored), ending with a run summary such as `done: {'created': 20, 'updated': 0, 'unchanged': 0, 'failed': 0}`.
+
+Typical verification flow:
+
+1. First run → products appear under *Sales → Products*.
+2. Second run → `unchanged` equals the product count.
+3. Edit a price in Odoo and rerun → log shows `updated EXT-1: ['list_price']` and the price returns to the source value.
+
+### 5. Calling Webhooks (cURL)
 
 **Todo Webhook:**
 ```bash
@@ -370,6 +395,8 @@ curl -X POST http://localhost:8069/nisa_pos_sync/webhook/sale \
     }
   }'
 ```
+
+> The API keys shown above are local development placeholders. In production, store secrets in `ir.config_parameter` or environment variables and rotate them.
 
 ---
 
@@ -403,6 +430,8 @@ curl -X POST http://localhost:8069/nisa_pos_sync/webhook/sale \
 | `You are not allowed to delete ... records` | User does not belong to the manager security group (`perm_unlink = 0`). | In Odoo, navigate to *Users & Companies* → *Groups*, select the manager group, and assign your user. |
 | Records invisible to standard user | Row-level record rule filters records to `user_id = uid`. | Expected security behavior. Switch to a manager account or inspect with `sudo()` in `odoo shell`. |
 | `cannot marshal None` | Method called via XML-RPC finished without returning a value. | Ensure the method explicitly finishes with `return True`. |
+| `sync_products.py`: `ModuleNotFoundError: requests` | Dependency missing in the active virtualenv. | Activate `.venv` and run `pip install -r requirements.txt`. |
+| `sync_products.py`: `Odoo authentication failed` | Wrong `.env` values (URL, DB, username, or password). | Check `ODOO_URL`, `ODOO_DB`, `ODOO_USERNAME`, `ODOO_PASSWORD` against your running instance. |
 
 ---
 
