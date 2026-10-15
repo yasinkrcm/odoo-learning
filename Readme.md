@@ -1,6 +1,6 @@
 # Odoo 19 Custom Addons & Architecture: Modules, ORM, Security, POS Sync, Progress Billing & RPC
 
-A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, four fully featured custom modules covering real-world business flows (construction progress billing, retail POS stock sync, sales customization, and full-stack ORM patterns), external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
+A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, five custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, sales customization, and full-stack ORM patterns), external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
 
 ---
 
@@ -13,6 +13,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`buksu_hakedis`** | Project & Accounting | Construction / traffic site subcontractor progress billing (*Hakediş*). Multi-team progress tracking (`buksu.hakedis.donem`, `buksu.hakedis.satir`, `buksu.ekip`), strict forward-only status workflow (`taslak` → `onaylandi` → `odendi`), dynamic line calculations (metraj, unit price, deductions), vendor bill creation (`account.move`), sequence auto-numbering, `project.project` smart button integration, and official QWeb PDF progress reports. | `base`, `project`, `web`, `account` |
 | **`nisa_pos_sync`** | Inventory & POS | Bidirectional product and stock synchronization with external POS systems. Product template extension (`external_pos_id`, `nisa_stock_qty`), HMAC-secured atomic webhook deductions with savepoint concurrency protection, audit sync log model (`nisa.sync.log`), system parameters configuration, and built-in mock POS server for testing. | `product` |
 | **`buksu_stok_saha`** | Inventory & Project | Field material & stock management for construction/traffic projects. Saha depoları (`stock.location.is_saha_depo`), project & team-linked pickings (`stock.picking.proje_id`, `sorumlu_ekip`), project-based stock move reporting (smart buttons + search filters), material request wizard (`TransientModel`) that auto-creates outgoing transfers, and record-rule security split (saha ekibi: own projects only / depo sorumlusu: all). | `stock`, `project` |
+| **`telegram_notify`** | Notifications | Telegram bot notifications from Odoo. `action_confirm` override on `sale.order` (calls `super()`, then notifies), scheduled daily overdue-invoice report via `ir.cron` on `account.move`, shared private `telegram.notifier` abstract model, credentials stored in `ir.config_parameter` (never in code), failure-safe delivery (a Telegram outage never blocks a sale), and token-safe error logging. | `sale`, `account` |
 | **`odoo_rpc.py`** | Integration | External XML-RPC Python client demonstrating CRUD operations, domain filters, server-side aggregation (`read_group`), One2many command tuples, and model method execution. | `xmlrpc.client`, `python-dotenv` |
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
 | **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
@@ -103,6 +104,17 @@ odoo-project/
     │   └── security/
     │       └── ir.model.access.csv
     │
+    ├── telegram_notify/            # Telegram notifications (orders & overdue invoices)
+    │   ├── __init__.py
+    │   ├── __manifest__.py
+    │   ├── data/
+    │   │   └── cron.xml            # Daily overdue-invoice report (ir.cron)
+    │   └── models/
+    │       ├── __init__.py
+    │       ├── telegram_notifier.py # Private _send() helper (AbstractModel)
+    │       ├── sale_order.py       # action_confirm override + notification
+    │       └── account_move.py     # Overdue invoice report method for cron
+    │
     └── buksu_stok_saha/            # Field Material & Stock Management (Saha Stok)
         ├── __init__.py
         ├── __manifest__.py
@@ -160,6 +172,7 @@ Create a database (e.g. `odoo19_dev`). Keep the database name, admin email, and 
    - **Buksu Hakediş Takibi** (`buksu_hakedis`)
    - **NISA POS Sync** (`nisa_pos_sync`)
    - **Buksu Saha Stok Yönetimi** (`buksu_stok_saha` - requires Inventory `stock` and Project `project`)
+   - **Telegram Notify** (`telegram_notify` - requires `sale` and `account`; see its setup section below)
 
 ---
 
@@ -281,6 +294,40 @@ Customizes the standard Inventory app for **project-based field material logisti
   - **Saha Ekibi Kullanıcısı:** sees only pickings/moves whose project has them in `project.project.saha_kullanici_ids` (explicit M2M — Odoo 19's `project.project` no longer exposes `user_ids`), via group-scoped record rules on both `stock.picking` and `stock.move`.
   - **Saha Depo Sorumlusu:** implied manager group with a permissive `[(1, '=', 1)]` rule granting full read/write/unlink across all field movements.
   - Wizard models ship their own ACLs for both groups (transient models still require explicit `ir.model.access` entries).
+
+---
+
+### 6. `telegram_notify` (Telegram Notifications)
+
+Pushes business events from Odoo to a Telegram chat.
+
+- **Sale confirmation alert:** overrides `sale.order.action_confirm`, calls `super()` first, then sends order number, customer, and total.
+- **Daily overdue-invoice report:** an `ir.cron` job calls `account.move._telegram_overdue_report()`, which finds posted, unpaid or partially paid customer invoices past their due date and sends a summary (first 20 invoices plus the total count). No message is sent when nothing is overdue.
+- **Shared sender (`telegram.notifier`, `AbstractModel`):** a single `_send(text)` method used by every feature. It is prefixed with `_`, so it cannot be called through RPC and arbitrary users cannot make the bot send messages.
+- **Secrets stay out of code:** the bot token and chat id are read from `ir.config_parameter` (`telegram_notify.bot_token`, `telegram_notify.chat_id`).
+- **Failure-safe:** delivery errors are caught and logged, so a Telegram outage never blocks confirming an order. Only the exception *type* is logged, because `requests` error messages contain the full URL, which includes the bot token.
+- **Production note:** the HTTP call currently runs inside the request transaction (10 s timeout). For high volume, move delivery to a queue (`ir.cron` queue or `queue_job`).
+
+**Setup:**
+
+1. In Telegram, create a bot with **@BotFather** (`/newbot`) and copy the token. Send any message to the new bot.
+2. Open `https://api.telegram.org/bot<TOKEN>/getUpdates` and copy `chat.id` from the response. Never share or commit the token.
+3. In Odoo (Developer Mode) go to *Settings → Technical → System Parameters* and create:
+
+   | Key | Value |
+   |---|---|
+   | `telegram_notify.bot_token` | your bot token |
+   | `telegram_notify.chat_id` | your chat id |
+
+4. Install the module:
+
+   ```bash
+   docker compose exec web odoo -d <your_db> -i telegram_notify \
+     --db_host=db --db_user=odoo --db_password=odoo --stop-after-init
+   docker compose restart web
+   ```
+
+5. Test: confirm a quotation (message arrives). To test the report, open *Scheduled Actions*, select **Telegram: Overdue Invoices Report**, and click **Run Manually**.
 
 ---
 
@@ -430,6 +477,9 @@ curl -X POST http://localhost:8069/nisa_pos_sync/webhook/sale \
 | `You are not allowed to delete ... records` | User does not belong to the manager security group (`perm_unlink = 0`). | In Odoo, navigate to *Users & Companies* → *Groups*, select the manager group, and assign your user. |
 | Records invisible to standard user | Row-level record rule filters records to `user_id = uid`. | Expected security behavior. Switch to a manager account or inspect with `sudo()` in `odoo shell`. |
 | `cannot marshal None` | Method called via XML-RPC finished without returning a value. | Ensure the method explicitly finishes with `return True`. |
+| *Scheduled Actions* menu not visible / cron not found | Menu lives under *Technical* and is hidden without Developer Mode. | Activate Developer Mode, then open *Settings → Technical → Automation → Scheduled Actions*, or go directly to `localhost:8069/odoo/action-base.ir_cron_act`. |
+| No Telegram message arrives | Missing or wrong `telegram_notify.bot_token` / `chat_id`, or you never messaged the bot first. | Check both system parameters, send a message to the bot, and read `docker compose logs web --tail 30` (`Telegram is not configured` or `Telegram send failed: <ErrorType>`). |
+| Overdue report sends nothing | No posted customer invoice is past its due date and unpaid. | Expected. Create and confirm an invoice with a past *Due Date*, then run the cron again. |
 | `sync_products.py`: `ModuleNotFoundError: requests` | Dependency missing in the active virtualenv. | Activate `.venv` and run `pip install -r requirements.txt`. |
 | `sync_products.py`: `Odoo authentication failed` | Wrong `.env` values (URL, DB, username, or password). | Check `ODOO_URL`, `ODOO_DB`, `ODOO_USERNAME`, `ODOO_PASSWORD` against your running instance. |
 
