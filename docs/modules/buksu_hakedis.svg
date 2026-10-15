@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="220" viewBox="0 0 940 220" role="img" aria-label="buksu_hakedis">
+  <defs>
+    <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#15803d"/><stop offset="1" stop-color="#4ade80"/>
+    </linearGradient>
+  </defs>
+  <rect width="940" height="220" rx="12" fill="#ffffff" stroke="#86efac"/>
+  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#h)"/>
+  <text x="24" y="29" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="700" fill="#ffffff">buksu_hakedis — Taşeron Hakediş Takibi</text>
+  <text x="916" y="28" text-anchor="end" font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#dcfce7">depends: base, project, web, account</text>
+
+  <text x="24" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#15803d">MODELLER</text>
+  <g font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#14532d">
+    <rect x="24" y="86" width="196" height="30" rx="15" fill="#dcfce7" stroke="#86efac"/>
+    <text x="122" y="105" text-anchor="middle" font-weight="600">buksu.hakedis.donem</text>
+    <rect x="24" y="122" width="196" height="30" rx="15" fill="#dcfce7" stroke="#86efac"/>
+    <text x="122" y="141" text-anchor="middle" font-weight="600">buksu.hakedis.satir</text>
+    <rect x="24" y="158" width="196" height="30" rx="15" fill="#dcfce7" stroke="#86efac"/>
+    <text x="122" y="177" text-anchor="middle" font-weight="600">buksu.ekip</text>
+  </g>
+
+  <text x="470" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#15803d">ÖNE ÇIKANLAR</text>
+  <g font-family="Helvetica,Arial,sans-serif" font-size="12.5" fill="#334155">
+    <circle cx="476" cy="95" r="3" fill="#16a34a"/><text x="488" y="99">İleri yönlü kilitli akış: taslak → onaylandı → ödendi (write engeli)</text>
+    <circle cx="476" cy="119" r="3" fill="#16a34a"/><text x="488" y="123">Metraj × birim fiyat satır hesabı, %0–100 kesinti kontrolleri</text>
+    <circle cx="476" cy="143" r="3" fill="#16a34a"/><text x="488" y="147">account.move satıcı faturası üretimi (in_invoice) + fatura_durumu</text>
+    <circle cx="476" cy="167" r="3" fill="#16a34a"/><text x="488" y="171">HAK/YYYY numaralandırma (ir.sequence) + proje akıllı butonu</text>
+    <circle cx="476" cy="191" r="3" fill="#16a34a"/><text x="488" y="195">İmza bloklu resmî QWeb PDF hakediş raporu</text>
+  </g>
+</svg>

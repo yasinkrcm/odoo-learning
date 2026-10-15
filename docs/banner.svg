@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="220" viewBox="0 0 1000 220" role="img" aria-label="Odoo 19 Custom Addons Showcase">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="0.55" stop-color="#1e293b"/>
+      <stop offset="1" stop-color="#312e81"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.03"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1000" height="220" rx="14" fill="url(#bg)"/>
+
+  <g opacity="0.14" stroke="#a5b4fc" stroke-width="1">
+    <path d="M0 186 H1000"/>
+    <path d="M0 200 H1000"/>
+    <path d="M60 0 V220"/>
+    <path d="M940 0 V220"/>
+  </g>
+
+  <rect x="60" y="150" width="880" height="5" rx="2.5" fill="url(#accent)" opacity="0.9"/>
+
+  <!-- Odoo mark suggestion: rounded squares -->
+  <g transform="translate(64 52)">
+    <rect x="0" y="0" width="56" height="56" rx="14" fill="url(#accent)" opacity="0.95"/>
+    <circle cx="28" cy="28" r="14" fill="#0f172a"/>
+    <circle cx="28" cy="28" r="6" fill="#e0e7ff"/>
+  </g>
+
+  <text x="146" y="74" font-family="Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#f8fafc">Odoo 19 Custom Addons</text>
+  <text x="148" y="106" font-family="Helvetica,Arial,sans-serif" font-size="19" fill="#cbd5e1">Modüler uygulama geliştirme · RPC Entegrasyonları · Webhook'lar · QWeb Raporlar</text>
+  <text x="148" y="134" font-family="Helvetica,Arial,sans-serif" font-size="15" fill="#94a3b8">7 custom module · Docker + PostgreSQL 15 · XML-RPC client scripts · JSON-RPC endpoints</text>
+</svg>

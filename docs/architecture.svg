@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640" role="img" aria-label="System architecture">
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#eef2f7"/>
+    </linearGradient>
+    <linearGradient id="odooBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrowDark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7c3aed"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="640" rx="12" fill="url(#page)"/>
+
+  <!-- Title -->
+  <text x="500" y="42" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="22" font-weight="700" fill="#0f172a">Sistem Mimarisi</text>
+  <text x="500" y="64" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="13" fill="#64748b">XML-RPC istemciler, JSON-RPC webhook'lar, Odoo 19 modülleri ve veri akışı</text>
+
+  <!-- LEFT: external sources -->
+  <g font-family="Helvetica,Arial,sans-serif">
+    <rect x="30" y="100" width="210" height="440" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+    <text x="135" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#4338ca">DIŞ KAYNAKLAR</text>
+
+    <rect x="50" y="140" width="170" height="54" rx="8" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="135" y="162" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">External REST API</text>
+    <text x="135" y="180" text-anchor="middle" font-size="11" fill="#64748b">dummyjson.com</text>
+
+    <rect x="50" y="230" width="170" height="54" rx="8" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="135" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">customers.csv</text>
+    <text x="135" y="270" text-anchor="middle" font-size="11" fill="#64748b">Toplu müşteri verisi</text>
+
+    <rect x="50" y="320" width="170" height="54" rx="8" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="135" y="342" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">External POS</text>
+    <text x="135" y="360" text-anchor="middle" font-size="11" fill="#64748b">Satış / stok olayları</text>
+
+    <rect x="50" y="410" width="170" height="54" rx="8" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="135" y="432" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Telegram API</text>
+    <text x="135" y="450" text-anchor="middle" font-size="11" fill="#64748b">sendMessage</text>
+
+    <rect x="50" y="484" width="170" height="36" rx="8" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="135" y="500" text-anchor="middle" font-size="11.5" font-weight="600" fill="#1e293b">Docker Compose</text>
+    <text x="135" y="515" text-anchor="middle" font-size="10.5" fill="#64748b">odoo:19 + postgres:15</text>
+  </g>
+
+  <!-- MIDDLE: RPC scripts & webhooks -->
+  <g font-family="Helvetica,Arial,sans-serif">
+    <rect x="290" y="100" width="200" height="220" rx="10" fill="#fff7ed" stroke="#fed7aa"/>
+    <text x="390" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#c2410c">XML-RPC CLIENT</text>
+
+    <rect x="306" y="140" width="168" height="40" rx="7" fill="#ffffff" stroke="#fed7aa"/>
+    <text x="390" y="165" text-anchor="middle" font-size="11.5" font-weight="600" fill="#1e293b">sync_products.py</text>
+
+    <rect x="306" y="194" width="168" height="40" rx="7" fill="#ffffff" stroke="#fed7aa"/>
+    <text x="390" y="219" text-anchor="middle" font-size="11.5" font-weight="600" fill="#1e293b">import_customers.py</text>
+
+    <rect x="306" y="248" width="168" height="40" rx="7" fill="#ffffff" stroke="#fed7aa"/>
+    <text x="390" y="273" text-anchor="middle" font-size="11.5" font-weight="600" fill="#1e293b">odoo_rpc.py</text>
+
+    <rect x="290" y="300" width="200" height="90" rx="10" fill="#eef2ff" stroke="#a5b4fc"/>
+    <text x="390" y="324" text-anchor="middle" font-size="12" font-weight="700" fill="#4338ca">JSON-RPC WEBHOOK</text>
+    <text x="390" y="346" text-anchor="middle" font-size="10" fill="#475569">/my_first_module/webhook/todo</text>
+    <text x="390" y="364" text-anchor="middle" font-size="10" fill="#475569">/nisa_pos_sync/webhook/sale</text>
+  </g>
+
+  <!-- CENTER/RIGHT: Odoo container -->
+  <g font-family="Helvetica,Arial,sans-serif">
+    <rect x="540" y="100" width="430" height="440" rx="10" fill="url(#odooBox)" stroke="#c4b5fd" stroke-width="1.5"/>
+    <rect x="540" y="100" width="430" height="34" rx="10" fill="url(#head)"/>
+    <text x="755" y="123" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">Odoo 19 Community  ·  web container</text>
+
+    <rect x="560" y="152" width="194" height="58" rx="8" fill="#ede9fe" stroke="#c4b5fd"/>
+    <text x="657" y="174" text-anchor="middle" font-size="12" font-weight="700" fill="#4c1d95">my_first_module</text>
+    <text x="657" y="192" text-anchor="middle" font-size="10.5" fill="#6b21a8">ORM · Wizard · Otomasyon</text>
+
+    <rect x="774" y="152" width="194" height="58" rx="8" fill="#e0f2fe" stroke="#7dd3fc"/>
+    <text x="871" y="174" text-anchor="middle" font-size="12" font-weight="700" fill="#075985">sale_custom</text>
+    <text x="871" y="192" text-anchor="middle" font-size="10.5" fill="#0c4a6e">Satış öncelik &amp; not alanları</text>
+
+    <rect x="560" y="226" width="194" height="58" rx="8" fill="#dcfce7" stroke="#86efac"/>
+    <text x="657" y="248" text-anchor="middle" font-size="12" font-weight="700" fill="#14532d">buksu_hakedis</text>
+    <text x="657" y="266" text-anchor="middle" font-size="10.5" fill="#14532d">Hakediş dönemleri → Satıcı faturası</text>
+
+    <rect x="774" y="226" width="194" height="58" rx="8" fill="#cffafe" stroke="#67e8f9"/>
+    <text x="871" y="248" text-anchor="middle" font-size="12" font-weight="700" fill="#155e75">nisa_pos_sync</text>
+    <text x="871" y="266" text-anchor="middle" font-size="10.5" fill="#155e75">POS push + atomik stok webhook</text>
+
+    <rect x="560" y="300" width="194" height="58" rx="8" fill="#fef9c3" stroke="#fde047"/>
+    <text x="657" y="322" text-anchor="middle" font-size="12" font-weight="700" fill="#713f12">buksu_stok_saha</text>
+    <text x="657" y="340" text-anchor="middle" font-size="10.5" fill="#713f12">Saha depo · talep wizard · izin kuralları</text>
+
+    <rect x="774" y="300" width="194" height="58" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+    <text x="871" y="322" text-anchor="middle" font-size="12" font-weight="700" fill="#7c2d12">telegram_notify</text>
+    <text x="871" y="340" text-anchor="middle" font-size="10.5" fill="#7c2d12">Sipariş bildirimi · günlük fatura raporu</text>
+
+    <rect x="560" y="374" width="194" height="58" rx="8" fill="#ffe4e6" stroke="#fda4af"/>
+    <text x="657" y="396" text-anchor="middle" font-size="12" font-weight="700" fill="#881337">mini_helpdesk</text>
+    <text x="657" y="414" text-anchor="middle" font-size="10.5" fill="#881337">Ticket · SLA · Chatter · Kanban</text>
+
+    <rect x="774" y="374" width="194" height="58" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+    <text x="871" y="396" text-anchor="middle" font-size="12" font-weight="700" fill="#334155">account · project · stock</text>
+    <text x="871" y="414" text-anchor="middle" font-size="10.5" fill="#64748b">Standart çekirdek uygulamalar</text>
+
+    <rect x="560" y="452" width="408" height="66" rx="8" fill="#fdf2f8" stroke="#f9a8d4"/>
+    <text x="764" y="474" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9d174d">ORKESTRASYON</text>
+    <text x="764" y="494" text-anchor="middle" font-size="10.5" fill="#9d174d">ir.cron (15 dk SLA · günlük fatura raporu)</text>
+    <text x="764" y="510" text-anchor="middle" font-size="10.5" fill="#9d174d">base.automation · server actions · QWeb PDF</text>
+  </g>
+
+  <!-- FLOW ARROWS -->
+  <g stroke="#64748b" stroke-width="1.6" fill="none">
+    <path d="M220 167 H306" marker-end="url(#arrow)"/>
+    <path d="M220 257 H268 V214 H306" marker-end="url(#arrow)"/>
+    <path d="M474 180 H505 V300 H540" marker-end="url(#arrowDark)"/>
+    <path d="M220 347 H306" marker-end="url(#arrow)"/>
+    <path d="M474 343 H540" marker-end="url(#arrowDark)"/>
+    <path d="M970 329 H982 V540 H135 V464" marker-end="url(#arrow)"/>
+  </g>
+
+  <g font-family="Helvetica,Arial,sans-serif" font-size="10" fill="#475569">
+    <text x="508" y="240" text-anchor="middle" fill="#7c3aed">XML-RPC</text>
+    <text x="505" y="352" text-anchor="middle" fill="#4338ca">HTTP POST + api_key</text>
+    <text x="500" y="530" text-anchor="middle" fill="#94a3b8">Giden bildirim akışı (telegram_notify · mini_helpdesk)</text>
+  </g>
+
+  <!-- Legend -->
+  <g font-family="Helvetica,Arial,sans-serif" font-size="11">
+    <rect x="30" y="556" width="940" height="56" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+    <line x1="50" y1="578" x2="86" y2="578" stroke="#64748b" stroke-width="1.6"/>
+    <text x="94" y="582" fill="#475569">İstek / veri akışı</text>
+    <line x1="230" y1="578" x2="266" y2="578" stroke="#7c3aed" stroke-width="1.6"/>
+    <text x="274" y="582" fill="#475569">RPC çağrısı (XML-RPC / JSON-RPC)</text>
+    <text x="50" y="603" fill="#94a3b8">Yükseltme akışı: kod/XML değişikliği → odoo -u &lt;module&gt; → docker compose restart web · secrets ir.config_parameter'da</text>
+  </g>
+</svg>

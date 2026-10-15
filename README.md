@@ -1,6 +1,23 @@
+<div align="center">
+  <img src="docs/banner.svg" alt="Odoo 19 Custom Addons Showcase" width="100%"/>
+  <p>
+    <img src="https://img.shields.io/badge/Odoo-19.0_Community-714B67?logo=odoo&logoColor=white&style=for-the-badge" alt="Odoo 19"/>
+    <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white&style=for-the-badge" alt="Docker"/>
+    <img src="https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white&style=for-the-badge" alt="PostgreSQL 15"/>
+    <img src="https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white&style=for-the-badge" alt="Python 3.9+"/>
+    <img src="https://img.shields.io/github/license/yasinkrcm/odoo-learning?style=for-the-badge" alt="License"/>
+    <img src="https://img.shields.io/github/last-commit/yasinkrcm/odoo-learning/main?logo=git&logoColor=white&style=for-the-badge" alt="Last commit"/>
+  </p>
+  <p><em>Containerized Odoo 19 development showcase — 7 custom modules, XML-RPC clients, JSON-RPC webhooks, real-world business flows.</em></p>
+</div>
+
 # Odoo 19 Custom Addons & Architecture: Modules, ORM, Security, POS Sync, Progress Billing & RPC
 
-A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, five custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, sales customization, and full-stack ORM patterns), external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
+A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, seven custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, a helpdesk with SLA tracking, sales customization, and full-stack ORM patterns), external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
+
+<div align="center">
+  <img src="docs/architecture.svg" alt="Sistem Mimarisi" width="100%"/>
+</div>
 
 ---
 
@@ -14,6 +31,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`nisa_pos_sync`** | Inventory & POS | Bidirectional product and stock synchronization with external POS systems. Product template extension (`external_pos_id`, `nisa_stock_qty`), HMAC-secured atomic webhook deductions with savepoint concurrency protection, audit sync log model (`nisa.sync.log`), system parameters configuration, and built-in mock POS server for testing. | `product` |
 | **`buksu_stok_saha`** | Inventory & Project | Field material & stock management for construction/traffic projects. Saha depoları (`stock.location.is_saha_depo`), project & team-linked pickings (`stock.picking.proje_id`, `sorumlu_ekip`), project-based stock move reporting (smart buttons + search filters), material request wizard (`TransientModel`) that auto-creates outgoing transfers, and record-rule security split (saha ekibi: own projects only / depo sorumlusu: all). | `stock`, `project` |
 | **`telegram_notify`** | Notifications | Telegram bot notifications from Odoo. `action_confirm` override on `sale.order` (calls `super()`, then notifies), scheduled daily overdue-invoice report via `ir.cron` on `account.move`, shared private `telegram.notifier` abstract model, credentials stored in `ir.config_parameter` (never in code), failure-safe delivery (a Telegram outage never blocks a sale), and token-safe error logging. | `sale`, `account` |
+| **`mini_helpdesk`** | Support / Workflow | Ticket management with `mail.thread` chatter and field tracking, kanban by stage (`group_expand` shows empty stages), sequence numbering (`TCK/0001`), priority-based SLA deadline (stored computed field, `readonly=False`), SLA breach cron (chatter message, activity, flag to prevent duplicate alerts), search filters, and rich Telegram notifications on create, stage change, assignment, priority change, and SLA breach. | `mail`, `telegram_notify` |
 | **`odoo_rpc.py`** | Integration | External XML-RPC Python client demonstrating CRUD operations, domain filters, server-side aggregation (`read_group`), One2many command tuples, and model method execution. | `xmlrpc.client`, `python-dotenv` |
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
 | **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
@@ -33,6 +51,17 @@ odoo-project/
 ├── sync_products.py                # Idempotent external API → Odoo product sync
 ├── customers.csv                   # Sample dataset for bulk import
 ├── README.md                       # Comprehensive repository documentation
+├── docs/                           # README visual assets (SVG)
+│   ├── banner.svg                  # Header banner
+│   ├── architecture.svg            # System architecture diagram
+│   └── modules/                    # One SVG card per module
+│       ├── my_first_module.svg
+│       ├── sale_custom.svg
+│       ├── buksu_hakedis.svg
+│       ├── nisa_pos_sync.svg
+│       ├── telegram_notify.svg
+│       ├── buksu_stok_saha.svg
+│       └── mini_helpdesk.svg
 └── addons/
     ├── my_first_module/            # Foundation module: ORM, wizards, actions & webhook
     │   ├── __init__.py
@@ -115,6 +144,21 @@ odoo-project/
     │       ├── sale_order.py       # action_confirm override + notification
     │       └── account_move.py     # Overdue invoice report method for cron
     │
+    ├── mini_helpdesk/              # Helpdesk tickets, stages, SLA & Telegram alerts
+    │   ├── __init__.py
+    │   ├── __manifest__.py
+    │   ├── models/
+    │   │   ├── __init__.py
+    │   │   ├── stage.py            # mini.helpdesk.stage (sequence, fold, is_closed)
+    │   │   └── ticket.py           # mini.helpdesk.ticket (chatter, SLA, notifications)
+    │   ├── views/
+    │   │   └── ticket_views.xml    # Kanban, list, form, search, action & menus
+    │   ├── data/
+    │   │   ├── sequence_stage.xml  # TCK/ sequence + default stages
+    │   │   └── cron.xml            # SLA breach check (every 15 minutes)
+    │   └── security/
+    │       └── ir.model.access.csv
+    │
     └── buksu_stok_saha/            # Field Material & Stock Management (Saha Stok)
         ├── __init__.py
         ├── __manifest__.py
@@ -173,6 +217,7 @@ Create a database (e.g. `odoo19_dev`). Keep the database name, admin email, and 
    - **NISA POS Sync** (`nisa_pos_sync`)
    - **Buksu Saha Stok Yönetimi** (`buksu_stok_saha` - requires Inventory `stock` and Project `project`)
    - **Telegram Notify** (`telegram_notify` - requires `sale` and `account`; see its setup section below)
+   - **Mini Helpdesk** (`mini_helpdesk` - requires `mail` and `telegram_notify`)
 
 ---
 
@@ -202,6 +247,10 @@ docker compose restart web
 
 ### 1. `buksu_hakedis` (Subcontractor Progress Billing)
 
+<div align="center">
+  <img src="docs/modules/buksu_hakedis.svg" alt="buksu_hakedis modül kartı" width="100%"/>
+</div>
+
 Designed for construction, utility, and infrastructure contractors managing field subcontractor teams (*taşeron ekipler*).
 
 - **Billing Periods (`buksu.hakedis.donem`):**
@@ -222,6 +271,10 @@ Designed for construction, utility, and infrastructure contractors managing fiel
 
 ### 2. `nisa_pos_sync` (External POS & Inventory Integration)
 
+<div align="center">
+  <img src="docs/modules/nisa_pos_sync.svg" alt="nisa_pos_sync modül kartı" width="100%"/>
+</div>
+
 Handles synchronization between Odoo Inventory/Product catalog and external Point-of-Sale (POS) systems.
 
 - **Product Catalog Enhancements (`product.template`):**
@@ -241,6 +294,10 @@ Handles synchronization between Odoo Inventory/Product catalog and external Poin
 ---
 
 ### 3. `my_first_module` (ORM, Views, Wizards, Security & Webhooks)
+
+<div align="center">
+  <img src="docs/modules/my_first_module.svg" alt="my_first_module modül kartı" width="100%"/>
+</div>
 
 A comprehensive reference implementation covering the Odoo framework fundamentals.
 
@@ -264,6 +321,10 @@ A comprehensive reference implementation covering the Odoo framework fundamental
 
 ### 4. `sale_custom` (Sales Order Customization)
 
+<div align="center">
+  <img src="docs/modules/sale_custom.svg" alt="sale_custom modül kartı" width="100%"/>
+</div>
+
 Demonstrates clean, modular extension of standard Odoo core applications without modifying core code.
 
 - Adds `x_priority` (Selection) and `x_internal_note` (Text) to `sale.order`.
@@ -273,6 +334,10 @@ Demonstrates clean, modular extension of standard Odoo core applications without
 ---
 
 ### 5. `buksu_stok_saha` (Field Material & Stock Management)
+
+<div align="center">
+  <img src="docs/modules/buksu_stok_saha.svg" alt="buksu_stok_saha modül kartı" width="100%"/>
+</div>
 
 Customizes the standard Inventory app for **project-based field material logistics** — construction/traffic sites that consume materials from a central warehouse into temporary, per-project site depots.
 
@@ -299,11 +364,15 @@ Customizes the standard Inventory app for **project-based field material logisti
 
 ### 6. `telegram_notify` (Telegram Notifications)
 
+<div align="center">
+  <img src="docs/modules/telegram_notify.svg" alt="telegram_notify modül kartı" width="100%"/>
+</div>
+
 Pushes business events from Odoo to a Telegram chat.
 
 - **Sale confirmation alert:** overrides `sale.order.action_confirm`, calls `super()` first, then sends order number, customer, and total.
 - **Daily overdue-invoice report:** an `ir.cron` job calls `account.move._telegram_overdue_report()`, which finds posted, unpaid or partially paid customer invoices past their due date and sends a summary (first 20 invoices plus the total count). No message is sent when nothing is overdue.
-- **Shared sender (`telegram.notifier`, `AbstractModel`):** a single `_send(text)` method used by every feature. It is prefixed with `_`, so it cannot be called through RPC and arbitrary users cannot make the bot send messages.
+- **Shared sender (`telegram.notifier`, `AbstractModel`):** a single `_send(text, parse_mode=None)` method used by every feature (including `mini_helpdesk`). It is prefixed with `_`, so it cannot be called through RPC and arbitrary users cannot make the bot send messages. Pass `parse_mode='HTML'` for formatted messages (callers must `html.escape` user-provided text).
 - **Secrets stay out of code:** the bot token and chat id are read from `ir.config_parameter` (`telegram_notify.bot_token`, `telegram_notify.chat_id`).
 - **Failure-safe:** delivery errors are caught and logged, so a Telegram outage never blocks confirming an order. Only the exception *type* is logged, because `requests` error messages contain the full URL, which includes the bot token.
 - **Production note:** the HTTP call currently runs inside the request transaction (10 s timeout). For high volume, move delivery to a queue (`ir.cron` queue or `queue_job`).
@@ -328,6 +397,35 @@ Pushes business events from Odoo to a Telegram chat.
    ```
 
 5. Test: confirm a quotation (message arrives). To test the report, open *Scheduled Actions*, select **Telegram: Overdue Invoices Report**, and click **Run Manually**.
+
+---
+
+### 7. `mini_helpdesk` (Tickets, SLA & Telegram Alerts)
+
+<div align="center">
+  <img src="docs/modules/mini_helpdesk.svg" alt="mini_helpdesk modül kartı" width="100%"/>
+</div>
+
+A compact helpdesk showing the standard Odoo workflow stack end to end.
+
+- **Models:** `mini.helpdesk.ticket` (inherits `mail.thread` and `mail.activity.mixin`) and `mini.helpdesk.stage` (`sequence`, `fold`, `is_closed`). Default stages are New, In Progress, Waiting, Solved.
+- **Chatter & tracking:** `tracking=True` on subject, customer, assignee, priority and stage logs every change automatically. Chatter is added with the Odoo 19 `<chatter/>` tag.
+- **Kanban:** grouped by stage with `group_expand`, so empty stages stay visible. Odoo 19 kanban cards use `<t t-name="card">`. Dragging a card between stages writes `stage_id` and triggers the same notifications as the form.
+- **Numbering:** `ir.sequence` generates `TCK/0001`-style references in `create()` (`@api.model_create_multi`).
+- **SLA:** deadline is a stored computed field (`create_date` + hours by priority: Urgent 4 h, High 24 h, Normal 48 h, Low 72 h) with `readonly=False`, so it can be adjusted manually. A non-stored `is_sla_breached` field drives the list decoration and form ribbon.
+- **SLA cron (`ir.cron`, every 15 minutes):** finds open tickets past their deadline, posts a chatter message, schedules an Activity for the assignee (works without SMTP), sends a Telegram alert, and sets `sla_notified` so the same ticket is never alerted twice.
+- **Telegram notifications:** HTML-formatted messages through `telegram.notifier` for new ticket, stage change (with a dedicated "Solved" message), assignment change, priority change and SLA breach. All dynamic text is escaped with `html.escape`.
+- **Security:** internal users can read, write and create tickets (no delete); stages are read-only for them.
+
+**Install:**
+
+```bash
+docker compose exec web odoo -d <your_db> -i mini_helpdesk \
+  --db_host=db --db_user=odoo --db_password=odoo --stop-after-init
+docker compose restart web
+```
+
+**Try it:** open *Mini Helpdesk → Tickets*, create a ticket, drag it between stages, set *SLA Deadline* to a past time, then run *Helpdesk: SLA Breach Check* from *Scheduled Actions*.
 
 ---
 
@@ -477,6 +575,7 @@ curl -X POST http://localhost:8069/nisa_pos_sync/webhook/sale \
 | `You are not allowed to delete ... records` | User does not belong to the manager security group (`perm_unlink = 0`). | In Odoo, navigate to *Users & Companies* → *Groups*, select the manager group, and assign your user. |
 | Records invisible to standard user | Row-level record rule filters records to `user_id = uid`. | Expected security behavior. Switch to a manager account or inspect with `sudo()` in `odoo shell`. |
 | `cannot marshal None` | Method called via XML-RPC finished without returning a value. | Ensure the method explicitly finishes with `return True`. |
+| `No matching record found for external id 'model_<name>'` while loading `ir.model.access.csv` | The Python models were never imported, usually because the module's root `__init__.py` is empty or missing `from . import models`. | Make sure `__init__.py` contains `from . import models` and `models/__init__.py` imports every model file, then reinstall. |
 | *Scheduled Actions* menu not visible / cron not found | Menu lives under *Technical* and is hidden without Developer Mode. | Activate Developer Mode, then open *Settings → Technical → Automation → Scheduled Actions*, or go directly to `localhost:8069/odoo/action-base.ir_cron_act`. |
 | No Telegram message arrives | Missing or wrong `telegram_notify.bot_token` / `chat_id`, or you never messaged the bot first. | Check both system parameters, send a message to the bot, and read `docker compose logs web --tail 30` (`Telegram is not configured` or `Telegram send failed: <ErrorType>`). |
 | Overdue report sends nothing | No posted customer invoice is past its due date and unpaid. | Expected. Create and confirm an invoice with a past *Due Date*, then run the cron again. |
