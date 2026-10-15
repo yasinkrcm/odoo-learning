@@ -36,6 +36,16 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
 | **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
 
+<div align="center">
+  <img src="docs/modules/buksu_hakedis.svg" alt="buksu_hakedis mimari diyagramı" width="100%"/>
+  <img src="docs/modules/nisa_pos_sync.svg" alt="nisa_pos_sync mimari diyagramı" width="100%"/>
+  <img src="docs/modules/my_first_module.svg" alt="my_first_module mimari diyagramı" width="100%"/>
+  <img src="docs/modules/sale_custom.svg" alt="sale_custom mimari diyagramı" width="100%"/>
+  <img src="docs/modules/buksu_stok_saha.svg" alt="buksu_stok_saha mimari diyagramı" width="100%"/>
+  <img src="docs/modules/telegram_notify.svg" alt="telegram_notify mimari diyagramı" width="100%"/>
+  <img src="docs/modules/mini_helpdesk.svg" alt="mini_helpdesk mimari diyagramı" width="100%"/>
+</div>
+
 ---
 
 ## 🗂️ Project Structure
@@ -54,7 +64,7 @@ odoo-project/
 ├── docs/                           # README visual assets (SVG)
 │   ├── banner.svg                  # Header banner
 │   ├── architecture.svg            # System architecture diagram
-│   └── modules/                    # One SVG card per module
+│   └── modules/                    # One architecture diagram per module
 │       ├── my_first_module.svg
 │       ├── sale_custom.svg
 │       ├── buksu_hakedis.svg

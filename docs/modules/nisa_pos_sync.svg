@@ -1,30 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="940" height="220" viewBox="0 0 940 220" role="img" aria-label="nisa_pos_sync">
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="470" viewBox="0 0 940 470" role="img" aria-label="nisa_pos_sync mimari">
   <defs>
-    <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
+    <linearGradient id="hh" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#0e7490"/><stop offset="1" stop-color="#22d3ee"/>
     </linearGradient>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7c3aed"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#ea580c"/></marker>
   </defs>
-  <rect width="940" height="220" rx="12" fill="#ffffff" stroke="#67e8f9"/>
-  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#h)"/>
-  <text x="24" y="29" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="700" fill="#ffffff">nisa_pos_sync — Dış POS &amp; Envanter Senkronu</text>
-  <text x="916" y="28" text-anchor="end" font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#cffafe">depends: product</text>
+  <rect width="940" height="470" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#hh)"/>
+  <text x="24" y="29" font-family="Helvetica" font-size="17" font-weight="700" fill="#ffffff">nisa_pos_sync — POS Senkron Mimarisi</text>
+  <text x="916" y="28" text-anchor="end" font-family="Helvetica" font-size="11.5" fill="#cffafe">depends: product</text>
 
-  <text x="24" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#0e7490">MODELLER</text>
-  <g font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#155e75">
-    <rect x="24" y="86" width="196" height="30" rx="15" fill="#cffafe" stroke="#67e8f9"/>
-    <text x="122" y="105" text-anchor="middle" font-weight="600">product.template (inherit)</text>
-    <rect x="24" y="122" width="196" height="30" rx="15" fill="#cffafe" stroke="#67e8f9"/>
-    <text x="122" y="141" text-anchor="middle" font-weight="600">nisa.sync.log</text>
-    <rect x="24" y="158" width="196" height="30" rx="15" fill="#cffafe" stroke="#67e8f9"/>
-    <text x="122" y="177" text-anchor="middle" font-weight="600">product.product (inherit)</text>
+  <!-- config -->
+  <g font-family="Helvetica">
+    <rect x="24" y="80" width="220" height="150" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+    <rect x="24" y="80" width="220" height="26" rx="9" fill="#fef3c7"/>
+    <text x="34" y="98" font-size="12" font-weight="700" fill="#92400e">ir.config_parameter</text>
+    <text x="34" y="126" font-size="10.5" fill="#334155">nisa_pos_sync.api_url</text>
+    <text x="34" y="143" font-size="10.5" fill="#334155">nisa_pos_sync.api_key</text>
+    <text x="34" y="160" font-size="10.5" fill="#334155">nisa_pos_sync.webhook_key</text>
+    <text x="34" y="177" font-size="10.5" fill="#b91c1c">boşsa tüm istekler reddedilir</text>
+    <text x="34" y="194" font-size="10.5" fill="#334155">nisa_pos_sync.mock_enabled</text>
   </g>
 
-  <text x="470" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#0e7490">ÖNE ÇIKANLAR</text>
-  <g font-family="Helvetica,Arial,sans-serif" font-size="12.5" fill="#334155">
-    <circle cx="476" cy="95" r="3" fill="#0891b2"/><text x="488" y="99">X-API-Key doğrulama: hmac.compare_digest (sabit zamanlı)</text>
-    <circle cx="476" cy="119" r="3" fill="#0891b2"/><text x="488" y="123">savepoint + atomik SQL stok düşümü (yarış koşulu güvenli)</text>
-    <circle cx="476" cy="143" r="3" fill="#0891b2"/><text x="488" y="147">Bağımsız cursor ile audit log — rollback'e rağmen hayatta kalır</text>
-    <circle cx="476" cy="167" r="3" fill="#0891b2"/><text x="488" y="171">POST /nisa_pos_sync/webhook/sale — asla HTTP 500 dönmez</text>
-    <circle cx="476" cy="191" r="3" fill="#0891b2"/><text x="488" y="195">Test amaçlı mock POS endpoint (mock_enabled parametresi)</text>
+  <!-- product.template -->
+  <g font-family="Helvetica">
+    <rect x="300" y="80" width="264" height="160" rx="9" fill="#ffffff" stroke="#67e8f9"/>
+    <rect x="300" y="80" width="264" height="26" rx="9" fill="#cffafe"/>
+    <text x="310" y="98" font-size="12" font-weight="700" fill="#155e75">product.template (extend)</text>
+    <text x="310" y="126" font-size="10.5" fill="#334155">external_pos_id (Char, indexed)</text>
+    <text x="310" y="143" font-size="10.5" fill="#334155">nisa_stock_qty (webhook azaltır)</text>
+    <text x="310" y="160" font-size="10.5" fill="#334155">nisa_last_sync (readonly)</text>
+    <text x="310" y="177" font-size="10.5" fill="#334155">action_nisa_sync_to_pos() — liste butonu</text>
+    <text x="310" y="194" font-size="10.5" fill="#334155">_nisa_get_config() → ayarları okur</text>
+    <text x="310" y="211" font-size="10.5" fill="#334155">product.product delegasyon butonu</text>
+  </g>
+
+  <!-- external POS -->
+  <g font-family="Helvetica">
+    <rect x="694" y="80" width="222" height="120" rx="9" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="694" y="80" width="222" height="26" rx="9" fill="#dbeafe"/>
+    <text x="704" y="98" font-size="12" font-weight="700" fill="#1e40af">External POS Sistemi</text>
+    <text x="704" y="126" font-size="10.5" fill="#334155">HTTP POST (15 s timeout)</text>
+    <text x="704" y="143" font-size="10.5" fill="#334155">{barcode, name, price, stock}</text>
+    <text x="704" y="160" font-size="10.5" fill="#334155">X-API-Key başlığı (opsiyonel)</text>
+    <path d="M568 130 H690" stroke="#ea580c" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#c)"/>
+    <text x="629" y="122" text-anchor="middle" font-size="10" fill="#ea580c">outbound push</text>
+    <rect x="694" y="212" width="222" height="44" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+    <text x="704" y="230" font-size="10.5" font-weight="600" fill="#b91c1c">Mock POS: /nisa_pos_sync/mock/products</text>
+    <text x="704" y="246" font-size="10.5" fill="#64748b">yanıt: {id: MOCK-&lt;barcode&gt;, status: ok}</text>
+  </g>
+
+  <!-- webhook controller -->
+  <g font-family="Helvetica">
+    <rect x="694" y="286" width="222" height="128" rx="9" fill="#ffffff" stroke="#67e8f9"/>
+    <rect x="694" y="286" width="222" height="26" rx="9" fill="#cffafe"/>
+    <text x="704" y="304" font-size="12" font-weight="700" fill="#155e75">webhook.py (jsonrpc, public)</text>
+    <text x="704" y="332" font-size="10.5" fill="#334155">POST /nisa_pos_sync/webhook/sale</text>
+    <text x="704" y="349" font-size="10.5" fill="#334155">hmac.compare_digest (sabit zamanlı)</text>
+    <text x="704" y="366" font-size="10.5" fill="#334155">savepoint + atomik SQL decrement</text>
+    <text x="704" y="383" font-size="10.5" fill="#334155">lines: [{barcode|external_pos_id, qty}]</text>
+    <text x="704" y="400" font-size="10.5" fill="#b91c1c">asla HTTP 500 dönmez → {status, results}</text>
+    <path d="M694 336 H568" stroke="#ea580c" stroke-width="1.6" stroke-dasharray="6 4" fill="none" marker-end="url(#c)"/>
+    <text x="631" y="326" text-anchor="middle" font-size="10" fill="#ea580c">satış olayları</text>
+  </g>
+
+  <!-- nisa.sync.log -->
+  <g font-family="Helvetica">
+    <rect x="300" y="286" width="264" height="128" rx="9" fill="#ffffff" stroke="#67e8f9"/>
+    <rect x="300" y="286" width="264" height="26" rx="9" fill="#cffafe"/>
+    <text x="310" y="304" font-size="12" font-weight="700" fill="#155e75">nisa.sync.log</text>
+    <text x="310" y="332" font-size="10.5" fill="#334155">date · product_tmpl_id / product_name</text>
+    <text x="310" y="349" font-size="10.5" fill="#334155">operation: push | webhook_sale</text>
+    <text x="310" y="366" font-size="10.5" fill="#334155">status: success | failed · message</text>
+    <text x="310" y="383" font-size="10.5" fill="#334155">log_independent() → ayrı cursor</text>
+    <text x="310" y="400" font-size="10.5" fill="#b91c1c">rollback olursa bile kayıt hayatta kalır</text>
+    <path d="M432 240 V282" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#a)"/>
+    <text x="440" y="266" font-size="10" fill="#7c3aed">stok azaltma + audit</text>
+    <path d="M300 380 H300" fill="none"/>
+  </g>
+
+  <!-- arrows from config -->
+  <path d="M248 145 H296" stroke="#b45309" stroke-width="1.4" stroke-dasharray="2 4" fill="none" marker-end="url(#b)"/>
+  <path d="M248 190 C270 280 268 380 296 380" stroke="#b45309" stroke-width="1.4" stroke-dasharray="2 4" fill="none" marker-end="url(#b)"/>
+  <text x="272" y="330" font-size="10" fill="#b45309" transform="rotate(-90 272 330)" text-anchor="middle">ayar okuma</text>
+
+  <!-- log <- webhook -->
+  <path d="M690 380 H568" stroke="#64748b" stroke-width="1.4" stroke-dasharray="3 4" fill="none" marker-end="url(#b)"/>
+  <text x="629" y="370" text-anchor="middle" font-size="10" fill="#64748b">audit</text>
+
+  <!-- legend -->
+  <g font-family="Helvetica" font-size="10.5">
+    <line x1="24" y1="440" x2="56" y2="440" stroke="#7c3aed" stroke-width="1.6"/><text x="62" y="444" fill="#475569">model değişikliği (stok/metadata)</text>
+    <line x1="262" y1="440" x2="294" y2="440" stroke="#64748b" stroke-width="1.4" stroke-dasharray="3 4"/><text x="300" y="444" fill="#475569">bağımlılık / log akışı</text>
+    <line x1="430" y1="440" x2="462" y2="440" stroke="#ea580c" stroke-width="1.6" stroke-dasharray="6 4"/><text x="468" y="444" fill="#475569">HTTP / dış entegrasyon</text>
+    <text x="24" y="462" fill="#94a3b8">çift yönlü: Odoo → POS push · POS → Odoo webhook · her olay loglanır · stok düşümü atomiktir</text>
   </g>
 </svg>

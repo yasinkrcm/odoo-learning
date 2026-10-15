@@ -1,27 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="940" height="220" viewBox="0 0 940 220" role="img" aria-label="sale_custom">
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="380" viewBox="0 0 940 380" role="img" aria-label="sale_custom mimari">
   <defs>
-    <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
+    <linearGradient id="hh" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#0369a1"/><stop offset="1" stop-color="#38bdf8"/>
     </linearGradient>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker>
   </defs>
-  <rect width="940" height="220" rx="12" fill="#ffffff" stroke="#7dd3fc"/>
-  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#h)"/>
-  <text x="24" y="29" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="700" fill="#ffffff">sale_custom — Satış Siparişi Özelleştirmesi</text>
-  <text x="916" y="28" text-anchor="end" font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#e0f2fe">depends: sale</text>
+  <rect width="940" height="380" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#hh)"/>
+  <text x="24" y="29" font-family="Helvetica" font-size="17" font-weight="700" fill="#ffffff">sale_custom — Model &amp; View Miras Alma Şeması</text>
+  <text x="916" y="28" text-anchor="end" font-family="Helvetica" font-size="11.5" fill="#e0f2fe">depends: sale</text>
 
-  <text x="24" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#075985">MODELLER</text>
-  <g font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#075985">
-    <rect x="24" y="86" width="196" height="30" rx="15" fill="#e0f2fe" stroke="#7dd3fc"/>
-    <text x="122" y="105" text-anchor="middle" font-weight="600">sale.order (inherit)</text>
-    <rect x="24" y="122" width="196" height="30" rx="15" fill="#e0f2fe" stroke="#7dd3fc"/>
-    <text x="122" y="141" text-anchor="middle" font-weight="600">x_priority · x_internal_note</text>
+  <!-- core model -->
+  <g font-family="Helvetica">
+    <rect x="24" y="80" width="260" height="150" rx="9" fill="#ffffff" stroke="#7dd3fc"/>
+    <rect x="24" y="80" width="260" height="26" rx="9" fill="#e0f2fe"/>
+    <text x="34" y="98" font-size="12" font-weight="700" fill="#075985">sale.order (çekirdek)</text>
+    <text x="34" y="126" font-size="10.5" fill="#334155">partner_id · order_line (O2M)</text>
+    <text x="34" y="143" font-size="10.5" fill="#334155">amount_total · state · date_order</text>
+    <text x="34" y="160" font-size="10.5" fill="#334155">standart quotation form/list view'ları</text>
+    <text x="34" y="182" font-size="10.5" fill="#0c4a6e">py dosyası: sadece _inherit, alan ekleme yok</text>
   </g>
 
-  <text x="470" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#075985">ÖNE ÇIKANLAR</text>
-  <g font-family="Helvetica,Arial,sans-serif" font-size="12.5" fill="#334155">
-    <circle cx="476" cy="95" r="3" fill="#0284c7"/><text x="488" y="99">Klasik model inheritance: çekirdeğe dokunmadan genişletme</text>
-    <circle cx="476" cy="119" r="3" fill="#0284c7"/><text x="488" y="123">&lt;xpath&gt; ile standart quotation form/list view'larına enjeksiyon</text>
-    <circle cx="476" cy="143" r="3" fill="#0284c7"/><text x="488" y="147">Set Urgent başlık butonu → action_set_urgent()</text>
-    <circle cx="476" cy="167" r="3" fill="#0284c7"/><text x="488" y="171">Yeni kalıcı model yok → ACL gerektirmez</text>
+  <!-- extension -->
+  <g font-family="Helvetica">
+    <rect x="340" y="80" width="280" height="150" rx="9" fill="#ffffff" stroke="#7dd3fc"/>
+    <rect x="340" y="80" width="280" height="26" rx="9" fill="#e0f2fe"/>
+    <text x="350" y="98" font-size="12" font-weight="700" fill="#075985">sale_custom (extend)</text>
+    <text x="350" y="126" font-size="10.5" fill="#334155">x_priority (normal / high / urgent)</text>
+    <text x="350" y="143" font-size="10.5" fill="#334155">x_internal_note (Text)</text>
+    <text x="350" y="160" font-size="10.5" fill="#334155">action_set_urgent() → x_priority='urgent'</text>
+    <text x="350" y="182" font-size="10.5" fill="#0c4a6e">sadece 2 alan + 1 metot — minimal örnek</text>
+    <path d="M284 155 H336" stroke="#64748b" stroke-width="1.6" marker-end="url(#b)"/>
+    <text x="310" y="147" text-anchor="middle" font-size="10" fill="#64748b">_inherit</text>
+  </g>
+
+  <!-- views -->
+  <g font-family="Helvetica">
+    <rect x="676" y="80" width="240" height="150" rx="9" fill="#ffffff" stroke="#7dd3fc"/>
+    <rect x="676" y="80" width="240" height="26" rx="9" fill="#e0f2fe"/>
+    <text x="686" y="98" font-size="12" font-weight="700" fill="#075985">views/sale_order_views.xml</text>
+    <text x="686" y="126" font-size="10.5" fill="#334155">&lt;xpath expr="//header"&gt;</text>
+    <text x="686" y="143" font-size="10.5" fill="#334155">&lt;xpath expr="//field[@name=...]"&gt;</text>
+    <text x="686" y="160" font-size="10.5" fill="#334155">Set Urgent butonu (confirmation ikonu)</text>
+    <text x="686" y="182" font-size="10.5" fill="#0c4a6e">Odoo 19: inherit + position semantiği</text>
+    <path d="M620 155 H672" stroke="#64748b" stroke-width="1.6" marker-end="url(#b)"/>
+    <text x="646" y="147" text-anchor="middle" font-size="10" fill="#64748b">alan enjeksiyonu</text>
+  </g>
+
+  <!-- outcome chips -->
+  <g font-family="Helvetica">
+    <rect x="24" y="270" width="280" height="56" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+    <text x="34" y="292" font-size="10.5" font-weight="600" fill="#166534">ACL gerekmez — kalıcı model eklenmedi</text>
+    <text x="34" y="309" font-size="10.5" fill="#64748b">manifest'te security klasörü yok</text>
+    <rect x="340" y="270" width="280" height="56" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="350" y="292" font-size="10.5" font-weight="600" fill="#1e40af">Set Urgent → Configuration UI'dan görünür</text>
+    <text x="350" y="309" font-size="10.5" fill="#64748b">priority widget ile hızlı durum değişimi</text>
+    <rect x="656" y="270" width="260" height="56" rx="8" fill="#fffbeb" stroke="#fcd34d"/>
+    <text x="666" y="292" font-size="10.5" font-weight="600" fill="#92400e">desen faydası</text>
+    <text x="666" y="309" font-size="10.5" fill="#64748b">RPC ile sipariş confirm edilebilir</text>
+  </g>
+
+  <!-- legend -->
+  <g font-family="Helvetica" font-size="10.5">
+    <line x1="24" y1="350" x2="56" y2="350" stroke="#64748b" stroke-width="1.6"/><text x="62" y="354" fill="#475569">inherit / enjeksiyon akışı</text>
+    <text x="24" y="372" fill="#94a3b8">sale_custom → bu deseni büyük modüller  takip eder: çekirdek kod bozulmadan genişletilir</text>
   </g>
 </svg>

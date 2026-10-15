@@ -1,30 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="940" height="220" viewBox="0 0 940 220" role="img" aria-label="my_first_module">
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="470" viewBox="0 0 940 470" role="img" aria-label="my_first_module mimari">
   <defs>
-    <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
+    <linearGradient id="hh" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#6d28d9"/><stop offset="1" stop-color="#a855f7"/>
     </linearGradient>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7c3aed"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker>
   </defs>
-  <rect width="940" height="220" rx="12" fill="#ffffff" stroke="#c4b5fd"/>
-  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#h)"/>
-  <text x="24" y="29" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="700" fill="#ffffff">my_first_module — ORM · Wizard · Otomasyon · Webhook</text>
-  <text x="916" y="28" text-anchor="end" font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#ede9fe">depends: base, base_automation</text>
+  <rect width="940" height="470" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#hh)"/>
+  <text x="24" y="29" font-family="Helvetica" font-size="17" font-weight="700" fill="#ffffff">my_first_module — ORM · Sihirbaz · Otomasyon · Webhook</text>
+  <text x="916" y="28" text-anchor="end" font-family="Helvetica" font-size="11.5" fill="#ede9fe">depends: base, base_automation</text>
 
-  <text x="24" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#6b21a8">MODELLER</text>
-  <g font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#4c1d95">
-    <rect x="24" y="86" width="196" height="30" rx="15" fill="#ede9fe" stroke="#c4b5fd"/>
-    <text x="122" y="105" text-anchor="middle" font-weight="600">my.todo</text>
-    <rect x="24" y="122" width="196" height="30" rx="15" fill="#ede9fe" stroke="#c4b5fd"/>
-    <text x="122" y="141" text-anchor="middle" font-weight="600">deadline.wizard (Transient)</text>
-    <rect x="24" y="158" width="196" height="30" rx="15" fill="#ede9fe" stroke="#c4b5fd"/>
-    <text x="122" y="177" text-anchor="middle" font-weight="600">res.partner + is_vip</text>
+  <!-- wizard -->
+  <g font-family="Helvetica">
+    <rect x="24" y="80" width="240" height="120" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+    <rect x="24" y="80" width="240" height="26" rx="9" fill="#ede9fe"/>
+    <text x="34" y="98" font-size="12" font-weight="700" fill="#4c1d95">my.todo.deadline.wizard (Transient)</text>
+    <text x="34" y="126" font-size="10.5" fill="#334155">deadline (Date, zorunlu)</text>
+    <text x="34" y="143" font-size="10.5" fill="#334155">action_apply() → active_ids</text>
+    <text x="34" y="160" font-size="10.5" fill="#334155">list view Actions menüsüne bağlı</text>
+    <path d="M264 140 H326" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#a)"/>
+    <text x="295" y="132" text-anchor="middle" font-size="10" fill="#7c3aed">toplu write</text>
   </g>
 
-  <text x="470" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#6b21a8">ÖNE ÇIKANLAR</text>
-  <g font-family="Helvetica,Arial,sans-serif" font-size="12.5" fill="#334155">
-    <circle cx="476" cy="95" r="3" fill="#7c3aed"/><text x="488" y="99">@api.depends vs @api.onchange farkı, relational compute zinciri</text>
-    <circle cx="476" cy="119" r="3" fill="#7c3aed"/><text x="488" y="123">sudo() ile yetkili yazma + QWeb PDF rapor</text>
-    <circle cx="476" cy="143" r="3" fill="#7c3aed"/><text x="488" y="147">base.automation → ir.actions.server (ir.logging kaydı)</text>
-    <circle cx="476" cy="167" r="3" fill="#7c3aed"/><text x="488" y="171">Kayıt kuralı: kullanıcı kendi kaydını, yönetici tümünü görür</text>
-    <circle cx="476" cy="191" r="3" fill="#7c3aed"/><text x="488" y="195">POST /my_first_module/webhook/todo (api_key korumalı)</text>
+  <!-- my.todo -->
+  <g font-family="Helvetica">
+    <rect x="330" y="80" width="280" height="200" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+    <rect x="330" y="80" width="280" height="26" rx="9" fill="#ede9fe"/>
+    <text x="340" y="98" font-size="12" font-weight="700" fill="#4c1d95">my.todo</text>
+    <text x="340" y="126" font-size="10.5" fill="#334155">name (zorunlu) · description · is_done</text>
+    <text x="340" y="143" font-size="10.5" fill="#334155">deadline (Date) · user_id (M2o, varsayılan uid)</text>
+    <text x="340" y="160" font-size="10.5" fill="#334155">partner_id (M2o) + partner_is_vip (related)</text>
+    <text x="340" y="177" font-size="10.5" fill="#334155">partner_country — @api.depends compute (store)</text>
+    <text x="340" y="194" font-size="10.5" fill="#334155">_onchange_partner_id → sadece UI notu</text>
+    <text x="340" y="211" font-size="10.5" fill="#334155">action_mark_done() · action_notify_external()</text>
+    <text x="340" y="228" font-size="10.5" fill="#334155">action_log_partner_note_as_admin() → sudo()</text>
+    <text x="340" y="250" font-size="10.5" fill="#6b21a8">onchange (UI) vs depends (DB) ayrımı temel ders</text>
+  </g>
+
+  <!-- res.partner -->
+  <g font-family="Helvetica">
+    <rect x="666" y="80" width="250" height="110" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+    <rect x="666" y="80" width="250" height="26" rx="9" fill="#ede9fe"/>
+    <text x="676" y="98" font-size="12" font-weight="700" fill="#4c1d95">res.partner (extend)</text>
+    <text x="676" y="126" font-size="10.5" fill="#334155">is_vip (Boolean)</text>
+    <text x="676" y="143" font-size="10.5" fill="#334155">vip_notes (Text)</text>
+    <text x="676" y="160" font-size="10.5" fill="#334155">odoo_rpc.py CRUD demosunun hedefi</text>
+    <path d="M610 140 H662" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#a)" marker-start="url(#a)"/>
+    <text x="636" y="130" text-anchor="middle" font-size="10" fill="#7c3aed">M2o + sudo</text>
+  </g>
+
+  <!-- security -->
+  <g font-family="Helvetica">
+    <rect x="24" y="240" width="240" height="130" rx="9" fill="#fff1f2" stroke="#fda4af"/>
+    <rect x="24" y="240" width="240" height="26" rx="9" fill="#ffe4e6"/>
+    <text x="34" y="258" font-size="12" font-weight="700" fill="#881337">Güvenlik</text>
+    <text x="34" y="286" font-size="10.5" fill="#334155">kullanıcı: ir.rule user_id = uid</text>
+    <text x="34" y="303" font-size="10.5" fill="#334155">Todo Manager: tüm kayıtlar (unlink dahil)</text>
+    <text x="34" y="320" font-size="10.5" fill="#334155">gruplar ACL CSV'den önce tanımlanır</text>
+    <text x="34" y="337" font-size="10.5" fill="#334155">security_advanced.xml → ir.model.access.csv</text>
+  </g>
+
+  <!-- webhook -->
+  <g font-family="Helvetica">
+    <rect x="666" y="230" width="250" height="140" rx="9" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="666" y="230" width="250" height="26" rx="9" fill="#dbeafe"/>
+    <text x="676" y="248" font-size="12" font-weight="700" fill="#1e40af">controllers/webhook.py</text>
+    <text x="676" y="276" font-size="10.5" fill="#334155">POST /my_first_module/webhook/todo</text>
+    <text x="676" y="293" font-size="10.5" fill="#334155">type='jsonrpc' · auth='public'</text>
+    <text x="676" y="310" font-size="10.5" fill="#334155">API_KEY kontrolü (sabit gizli)</text>
+    <text x="676" y="327" font-size="10.5" fill="#334155">name zorunlu → my.todo create (sudo)</text>
+    <text x="676" y="344" font-size="10.5" fill="#334155">yanıt: {success, id}</text>
+    <path d="M666 300 H614" stroke="#64748b" stroke-width="1.4" stroke-dasharray="3 4" marker-end="url(#b)"/>
+    <text x="640" y="290" text-anchor="middle" font-size="10" fill="#64748b">sudo create</text>
+  </g>
+
+  <!-- automation chain -->
+  <g font-family="Helvetica">
+    <rect x="330" y="330" width="280" height="84" rx="9" fill="#ffffff" stroke="#c4b5fd"/>
+    <text x="344" y="352" font-size="11.5" font-weight="700" fill="#4c1d95">Otomasyon Zinciri</text>
+    <text x="344" y="374" font-size="10.5" fill="#334155">base.automation (on create)</text>
+    <text x="344" y="391" font-size="10.5" fill="#334155">→ action_server_ids → ir.actions.server</text>
+    <text x="344" y="408" font-size="10.5" fill="#334155">→ log() → ir.logging (DB içi log)</text>
+  </g>
+
+  <!-- cinayet: rpc chip -->
+  <g font-family="Helvetica">
+    <rect x="24" y="400" width="240" height="46" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+    <text x="34" y="420" font-size="10.5" font-weight="600" fill="#166534">odoo_rpc.py: create / read_group demo</text>
+    <text x="34" y="437" font-size="10.5" fill="#64748b">search_read · write · action_mark_done</text>
+  </g>
+
+  <!-- legend -->
+  <g font-family="Helvetica" font-size="10.5">
+    <line x1="330" y1="446" x2="362" y2="446" stroke="#7c3aed" stroke-width="1.6"/><text x="368" y="450" fill="#475569">ORM ilişkisi</text>
+    <line x1="452" y1="446" x2="484" y2="446" stroke="#64748b" stroke-width="1.4" stroke-dasharray="3 4"/><text x="490" y="450" fill="#475569">işlem/veri akışı</text>
+    <text x="24" y="446" fill="#94a3b8">temel ders: </text>
   </g>
 </svg>
