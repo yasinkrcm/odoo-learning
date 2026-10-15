@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_helpdesk_ticket" model="ir.sequence">
+        <field name="name">Helpdesk Ticket</field>
+        <field name="code">mini.helpdesk.ticket</field>
+        <field name="prefix">TCK/</field>
+        <field name="padding">4</field>
+    </record>
+
+    <record id="stage_new" model="mini.helpdesk.stage">
+        <field name="name">New</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="stage_in_progress" model="mini.helpdesk.stage">
+        <field name="name">In Progress</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="stage_waiting" model="mini.helpdesk.stage">
+        <field name="name">Waiting</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="stage_solved" model="mini.helpdesk.stage">
+        <field name="name">Solved</field>
+        <field name="sequence">40</field>
+        <field name="is_closed" eval="True"/>
+        <field name="fold" eval="True"/>
+    </record>
+</odoo>

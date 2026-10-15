@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_helpdesk_ticket_list" model="ir.ui.view">
+        <field name="name">mini.helpdesk.ticket.list</field>
+        <field name="model">mini.helpdesk.ticket</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="is_sla_breached">
+                <field name="number"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <field name="priority" widget="priority"/>
+                <field name="stage_id"/>
+                <field name="sla_deadline"/>
+                <field name="is_sla_breached" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_helpdesk_ticket_form" model="ir.ui.view">
+        <field name="name">mini.helpdesk.ticket.form</field>
+        <field name="model">mini.helpdesk.ticket</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="stage_id" widget="statusbar" options="{'clickable': '1'}"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="SLA Breached" bg_color="text-bg-danger"
+                            invisible="not is_sla_breached"/>
+                    <div class="oe_title">
+                        <h1><field name="number" readonly="1"/></h1>
+                        <h2><field name="name" placeholder="Subject..."/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="user_id"/>
+                            <field name="priority" widget="priority"/>
+                        </group>
+                        <group>
+                            <field name="sla_deadline"/>
+                            <field name="is_sla_breached" invisible="1"/>
+                            <field name="sla_notified" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_helpdesk_ticket_kanban" model="ir.ui.view">
+        <field name="name">mini.helpdesk.ticket.kanban</field>
+        <field name="model">mini.helpdesk.ticket</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="stage_id">
+                <field name="is_sla_breached"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold"/>
+                        <div class="text-muted"><field name="number"/></div>
+                        <div t-if="record.is_sla_breached.raw_value" class="text-danger">SLA breached</div>
+                        <field name="priority" widget="priority"/>
+                        <footer>
+                            <field name="partner_id"/>
+                            <field name="user_id" widget="many2one_avatar_user" class="ms-auto"/>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_helpdesk_ticket_search" model="ir.ui.view">
+        <field name="name">mini.helpdesk.ticket.search</field>
+        <field name="model">mini.helpdesk.ticket</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="number"/>
+                <field name="partner_id"/>
+                <filter name="my_tickets" string="My Tickets" domain="[('user_id', '=', uid)]"/>
+                <filter name="open" string="Open" domain="[('stage_id.is_closed', '=', False)]"/>
+                <filter name="sla_breached" string="SLA Breached"
+                        domain="[('stage_id.is_closed', '=', False), ('sla_deadline', '&lt;', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))]"/>
+                <group>
+                    <filter name="group_stage" string="Stage" context="{'group_by': 'stage_id'}"/>
+                    <filter name="group_user" string="Assigned To" context="{'group_by': 'user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_helpdesk_ticket" model="ir.actions.act_window">
+        <field name="name">Tickets</field>
+        <field name="res_model">mini.helpdesk.ticket</field>
+        <field name="view_mode">kanban,list,form</field>
+    </record>
+
+    <menuitem id="menu_helpdesk_root" name="Mini Helpdesk" sequence="50"/>
+    <menuitem id="menu_helpdesk_tickets" name="Tickets" parent="menu_helpdesk_root"
+              action="action_helpdesk_ticket" sequence="10"/>
+</odoo>

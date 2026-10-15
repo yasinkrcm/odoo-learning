@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cron_helpdesk_sla_check" model="ir.cron">
+        <field name="name">Helpdesk: SLA Breach Check</field>
+        <field name="model_id" ref="model_mini_helpdesk_ticket"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_sla_check()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

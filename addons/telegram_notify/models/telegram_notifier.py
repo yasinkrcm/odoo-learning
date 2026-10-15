@@ -12,17 +12,20 @@ class TelegramNotifier(models.AbstractModel):
     _description = 'Telegram Notifier'
 
     @api.model
-    def _send(self, text):
+    def _send(self, text, parse_mode=None):
         icp = self.env['ir.config_parameter'].sudo()
         token = icp.get_param('telegram_notify.bot_token')
         chat_id = icp.get_param('telegram_notify.chat_id')
         if not token or not chat_id:
             _logger.warning('Telegram is not configured (bot_token / chat_id missing)')
             return False
+        payload = {'chat_id': chat_id, 'text': text, 'disable_web_page_preview': True}
+        if parse_mode:
+            payload['parse_mode'] = parse_mode
         try:
             resp = requests.post(
                 f'https://api.telegram.org/bot{token}/sendMessage',
-                json={'chat_id': chat_id, 'text': text},
+                json=payload,
                 timeout=10,
             )
             resp.raise_for_status()
