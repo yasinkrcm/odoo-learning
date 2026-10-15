@@ -1,0 +1,19 @@
+# ============================================================
+#  Caddyfile — otomatik Let's Encrypt HTTPS
+#  A kaydınız odoo.yasinkaracam.com → sunucu IP olmalı.
+# ============================================================
+
+{$SITE_DOMAIN} {
+	# Odoo web uygulaması
+	reverse_proxy web:8069
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	@gzip_paths path /web/static/* /web/webclient/*
+	encode gzip
+
+	# Node tarafı zorunlu yok; WebSocket (chatter anlık güncelleme) tam destekli.
+}

@@ -21,3 +21,6 @@ ENV/
 # Environment files
 .env
 .env*.local
+# Production secrets (deploy)
+deploy/.env
+deploy/backups/
