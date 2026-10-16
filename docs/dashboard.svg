@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="470" viewBox="0 0 940 470" role="img" aria-label="dashboard mimari">
+  <defs>
+    <linearGradient id="hh" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="dash" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e0e7ff"/><stop offset="1" stop-color="#cffafe"/>
+    </linearGradient>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7c3aed"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#0ea5e9"/></marker>
+  </defs>
+  <rect width="940" height="470" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#hh)"/>
+  <text x="24" y="29" font-family="Helvetica" font-size="17" font-weight="700" fill="#ffffff">Sales Pulse Dashboard — Vanilla JS Mimari</text>
+  <text x="916" y="28" text-anchor="end" font-family="Helvetica" font-size="11.5" fill="#e0e7ff">framework yok · tek bağımlılık: KPI API</text>
+
+  <!-- browser -->
+  <g font-family="Helvetica">
+    <rect x="24" y="80" width="270" height="180" rx="9" fill="url(#dash)" stroke="#a5b4fc"/>
+    <rect x="24" y="80" width="270" height="26" rx="9" fill="#c7d2fe"/>
+    <text x="34" y="98" font-size="12" font-weight="700" fill="#3730a3">dashboard/index.html + app.js</text>
+    <text x="34" y="126" font-size="10.5" fill="#334155">fetch(url + '?days=N&amp;api_key=…')</text>
+    <text x="34" y="143" font-size="10.5" fill="#334155">config: URL + key (localStorage)</text>
+    <text x="34" y="160" font-size="10.5" fill="#334155">7 / 30 / 90 gün aralık seçici</text>
+    <text x="34" y="177" font-size="10.5" fill="#334155">60 sn otomatik yenileme + status dot</text>
+    <text x="34" y="194" font-size="10.5" fill="#334155">KPI kartlar · bar chart · top listeler</text>
+    <text x="34" y="216" font-size="10.5" fill="#4338ca">hata/yükleme durumu dahil</text>
+  </g>
+
+  <!-- KPI API -->
+  <g font-family="Helvetica">
+    <rect x="350" y="80" width="264" height="180" rx="9" fill="#ffffff" stroke="#a5b4fd"/>
+    <rect x="350" y="80" width="264" height="26" rx="9" fill="#ede9fe"/>
+    <text x="360" y="98" font-size="12" font-weight="700" fill="#4c1d95">controllers/kpi.py (public, CORS *)</text>
+    <text x="360" y="126" font-size="10.5" fill="#334155">GET /sales_insights/kpi?days=N&amp;api_key=…</text>
+    <text x="360" y="143" font-size="10.5" fill="#334155">hmac.compare_digest doğrulama</text>
+    <text x="360" y="160" font-size="10.5" fill="#334155">ir.config_parameter: sales_insights.api_key</text>
+    <text x="360" y="177" font-size="10.5" fill="#334155">days clamp 1–365 → mevcut + önceki dönem</text>
+    <text x="360" y="194" font-size="10.5" fill="#334155">read_group → amount / orders / qty / avg</text>
+    <text x="360" y="216" font-size="10.5" fill="#4c1d95">günlük seri · top 5 müşteri · top 5 ürün</text>
+  </g>
+
+  <!-- data sources -->
+  <g font-family="Helvetica">
+    <rect x="670" y="80" width="246" height="120" rx="9" fill="#dcfce7" stroke="#86efac"/>
+    <rect x="670" y="80" width="246" height="26" rx="9" fill="#bbf7d0"/>
+    <text x="680" y="98" font-size="12" font-weight="700" fill="#14532d">sales.analysis (SQL VIEW)</text>
+    <text x="680" y="126" font-size="10.5" fill="#334155">sale_order_line JOIN confirmed orders</text>
+    <text x="680" y="143" font-size="10.5" fill="#334155">partner · product · kategori destekli</text>
+    <text x="680" y="160" font-size="10.5" fill="#334155">_auto=False → init() ile view üret</text>
+
+    <rect x="670" y="215" width="246" height="100" rx="9" fill="#ffe4e6" stroke="#fda4af"/>
+    <rect x="670" y="215" width="246" height="26" rx="9" fill="#fecdd3"/>
+    <text x="680" y="233" font-size="12" font-weight="700" fill="#881337">mini.helpdesk.ticket (SLA)</text>
+    <text x="680" y="261" font-size="10.5" fill="#334155">is_sla_breached non-stored</text>
+    <text x="680" y="278" font-size="10.5" fill="#334155">stored alanlarla sayım (sla_deadline)</text>
+
+    <!-- arrows -->
+    <path d="M298 170 H346" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#a)"/>
+    <text x="322" y="162" text-anchor="middle" font-size="10" fill="#7c3aed">JSON fetch</text>
+    <path d="M618 140 H666" stroke="#0ea5e9" stroke-width="1.6" marker-end="url(#c)"/>
+    <text x="642" y="132" text-anchor="middle" font-size="10" fill="#0ea5e9">read_group</text>
+    <path d="M618 240 H666" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#a)"/>
+    <text x="642" y="232" text-anchor="middle" font-size="10" fill="#7c3aed">search_count</text>
+  </g>
+
+  <!-- response payload -->
+  <g font-family="Helvetica">
+    <rect x="350" y="290" width="264" height="120" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+    <rect x="350" y="290" width="264" height="26" rx="9" fill="#fef3c7"/>
+    <text x="360" y="308" font-size="12" font-weight="700" fill="#92400e">JSON cevap</text>
+    <text x="360" y="336" font-size="10.5" fill="#334155">kpi: amount_total · prev_amount_total</text>
+    <text x="360" y="353" font-size="10.5" fill="#334155">order_count · qty_total · avg_order</text>
+    <text x="360" y="370" font-size="10.5" fill="#334155">daily[{date,amount}] · currency · days</text>
+    <text x="360" y="387" font-size="10.5" fill="#334155">top_customers[5] · top_products[5]</text>
+    <text x="360" y="404" font-size="10.5" fill="#334155">helpdesk.sla_breached · company</text>
+    <path d="M450 264 V286" stroke="#7c3aed" stroke-width="1.4" marker-end="url(#a)"/>
+  </g>
+
+  <!-- notes -->
+  <g font-family="Helvetica">
+    <rect x="24" y="290" width="270" height="120" rx="9" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="34" y="312" font-size="11.5" font-weight="700" fill="#1e40af">CORS tuzağı (öğrendik!)</text>
+    <text x="34" y="336" font-size="10.5" fill="#334155">Odoo preflight Allow-Headers sabit —</text>
+    <text x="34" y="353" font-size="10.5" fill="#334155">custom header (X-API-Key) reddedilir.</text>
+    <text x="34" y="370" font-size="10.5" fill="#334155">api_key query string'te taşınır →</text>
+    <text x="34" y="387" font-size="10.5" fill="#334155">preflight hiç gerekmiyor</text>
+    <text x="34" y="407" font-size="10.5" fill="#1e40af">Access-Control-Allow-Origin: *</text>
+  </g>
+
+  <!-- legend -->
+  <g font-family="Helvetica" font-size="10.5">
+    <line x1="330" y1="440" x2="362" y2="440" stroke="#7c3aed" stroke-width="1.6"/><text x="368" y="444" fill="#475569">veri çağrısı</text>
+    <line x1="450" y1="440" x2="482" y2="440" stroke="#0ea5e9" stroke-width="1.6"/><text x="488" y="444" fill="#475569">SQL agregasyon akışı</text>
+    <text x="24" y="462" fill="#94a3b8">api_key localStorage'da, Odoo'da sistem parametresi olarak duruyor · canlıda aynı origin URL (nginx /dashboard/)</text>
+  </g>
+</svg>

@@ -36,6 +36,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`odoo_rpc.py`** | Integration | External XML-RPC Python client demonstrating CRUD operations, domain filters, server-side aggregation (`read_group`), One2many command tuples, and model method execution. | `xmlrpc.client`, `python-dotenv` |
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
 | **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
+| **`dashboard/`** | Frontend / UI | Standalone vanilla JS analytics dashboard (no framework, no build step) over the `sales_insights` KPI API: KPI cards with trend badge, animated daily bar chart with tooltips, top customer/product bar lists, 7/30/90-day range switcher, 60s auto-refresh, live status dot, settings dialog persisting URL/API key in localStorage. Deployment: any static host (GitHub Pages, nginx location, local `python3 -m http.server`) — CORS `*` lets it talk to any Odoo exposing the KPI API. | `GET /sales_insights/kpi` |
 
 <div align="center">
   <img src="docs/modules/buksu_hakedis.svg" alt="buksu_hakedis mimari diyagramı" width="100%"/>
@@ -46,6 +47,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
   <img src="docs/modules/telegram_notify.svg" alt="telegram_notify mimari diyagramı" width="100%"/>
   <img src="docs/modules/mini_helpdesk.svg" alt="mini_helpdesk mimari diyagramı" width="100%"/>
   <img src="docs/modules/sales_insights.svg" alt="sales_insights mimari diyagramı" width="100%"/>
+  <img src="docs/dashboard.svg" alt="Sales Pulse Dashboard mimari diyagramı" width="100%"/>
 </div>
 
 ---
@@ -62,10 +64,15 @@ odoo-project/
 ├── import_customers.py             # Idempotent CSV customer importer
 ├── sync_products.py                # Idempotent external API → Odoo product sync
 ├── customers.csv                   # Sample dataset for bulk import
+├── dashboard/                      # Standalone vanilla JS analytics UI
+│   ├── index.html                  # Skeleton: KPI cards + chart + lists
+│   ├── app.js                      # fetch/render logic (localStorage settings)
+│   └── style.css                   # Dark theme matching the README visuals
 ├── README.md                       # Comprehensive repository documentation
 ├── docs/                           # README visual assets (SVG)
 │   ├── banner.svg                  # Header banner
 │   ├── architecture.svg            # System architecture diagram
+│   ├── dashboard.svg               # Sales Pulse dashboard diagram
 │   └── modules/                    # One architecture diagram per module
 │       ├── my_first_module.svg
 │       ├── sale_custom.svg
@@ -522,8 +529,14 @@ Demonstrates Odoo's **SQL-view reporting pattern** (`_auto = False` model backed
 - **`seed_sales.py` (RPC Scripts → [5](#5-seed-demo-sales-seed_salespy)):**
   - Creates 15 random confirmed sales orders over XML-RPC from real partners + `EXT-` products so the analysis views and Telegram summary have data to show.
 - **Public KPI API + JS Dashboard:**
+
+<div align="center">
+  <img src="docs/dashboard.svg" alt="Sales Pulse dashboard mimarisi" width="100%"/>
+</div>
+
   - `GET /sales_insights/kpi?days=N&api_key=<key>` (Odoo; cors='*', api key `sales_insights.api_key` system parameter) → amount, prev period, orders, qty, avg order, daily series, top 5 customers, top 5 products, SLA-breach count.
   - `/dashboard/` — framework-free (vanilla JS + CSS) dark analytics UI: KPI cards, animated daily bar chart, top-customer/product bars, 7/30/90-day ranges, auto-refresh 60s, settings dialog (URL + API key in localStorage). Works against any Odoo instance exposing the KPI API (CORS enabled).
+  - **Local test:** `python3 -m http.server 8613 -d dashboard` → open `http://localhost:8613` → ⚙ → URL `http://localhost:8069` + api key. Odoo's CORS preflight has a fixed allow-header list, so the **API key travels in the query string** (no custom header = no preflight).
 
 ---
 
