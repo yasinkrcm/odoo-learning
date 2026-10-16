@@ -1,0 +1,166 @@
+:root {
+  --bg: #0b1120;
+  --panel: #131c2e;
+  --panel-2: #172136;
+  --border: #243049;
+  --text: #e2e8f0;
+  --muted: #8ea0bd;
+  --accent-a: #7c3aed;
+  --accent-b: #06b6d4;
+  --good: #22c55e;
+  --bad: #ef4444;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgba(124, 58, 237, .25), transparent 60%),
+    radial-gradient(900px 400px at -10% 110%, rgba(6, 182, 212, .16), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  padding: 28px clamp(16px, 4vw, 56px) 40px;
+}
+
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 14px; margin-bottom: 30px;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand .logo {
+  width: 46px; height: 46px; border-radius: 13px; display: block;
+  background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+  box-shadow: 0 10px 28px rgba(124, 58, 237, .45);
+}
+.brand h1 { font-size: 22px; letter-spacing: .3px; }
+.company { color: var(--muted); font-size: 13px; }
+
+.controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.status { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #64748b; }
+.dot.ok { background: var(--good); box-shadow: 0 0 10px rgba(34,197,94,.8); animation: pulse 2s infinite; }
+.dot.err { background: var(--bad); }
+@keyframes pulse { 50% { opacity: .55; } }
+
+.range, #refresh, #settings-btn {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 10px;
+}
+.range { display: inline-flex; overflow: hidden; }
+.range button, #refresh, #settings-btn {
+  padding: 8px 14px; font-size: 13px; cursor: pointer; border: 0;
+  background: transparent; color: var(--muted);
+}
+.range button.active { color: #fff; background: rgba(124,58,237,.35); }
+#refresh, #settings-btn { padding: 8px 12px; font-size: 15px; }
+#refresh:hover, #settings-btn:hover, .range button:hover { color: #fff; }
+
+.cards {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  margin-bottom: 18px;
+}
+.card {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 18px 20px; position: relative; overflow: hidden;
+}
+.card::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+}
+.card .label { color: var(--muted); font-size: 12.5px; margin-bottom: 8px; }
+.card .value { font-size: clamp(20px, 2.4vw, 27px); font-weight: 700; letter-spacing: .3px; }
+.card .sub { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+.up { color: var(--good); } .down { color: var(--bad); }
+
+.grid.two {
+  display: grid; gap: 16px;
+  grid-template-columns: 1.25fr 1fr;
+  align-items: stretch;
+}
+@media (max-width: 900px) { .grid.two { grid-template-columns: 1fr; } }
+
+.panel {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px 22px;
+}
+.panel h2 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+
+.chart { display: flex; align-items: flex-end; gap: 3px; height: 210px; }
+.chart .bar {
+  flex: 1; min-height: 4px; border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, var(--accent-b), var(--accent-a));
+  position: relative; cursor: pointer;
+  transition: filter .15s ease;
+}
+.chart .bar:hover { filter: brightness(1.25); }
+.chart .bar .tip {
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%);
+  background: #0f1a2c; border: 1px solid var(--border);
+  font-size: 11px; color: var(--text); padding: 4px 8px;
+  border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none;
+  transition: opacity .12s ease;
+}
+.chart .bar:hover .tip { opacity: 1; }
+
+.bars { list-style: none; }
+.bars.compact li { padding: 8px 0 10px; }
+.bars li { padding: 10px 0 12px; }
+.bars .row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+.bars .name { font-size: 13.5px; }
+.bars .val { font-size: 13.5px; font-weight: 600; color: #c7d2fe; }
+.bars .track {
+  height: 7px; background: rgba(148,163,184,.14);
+  border-radius: 6px; overflow: hidden;
+}
+.bars .fill {
+  height: 100%; width: 0; border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+  transition: width .7s cubic-bezier(.2,.8,.2,1);
+}
+
+.muted { color: var(--muted); font-size: 13px; }
+footer {
+  margin-top: 26px; color: var(--muted); font-size: 12px;
+  display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+}
+footer code { color: #94a3b8; }
+
+.error {
+  margin: 30px auto; max-width: 560px; text-align: center;
+  background: rgba(239, 68, 68, .1); border: 1px solid rgba(239, 68, 68, .45);
+  color: #fecaca; padding: 16px 20px; border-radius: 12px;
+}
+
+.skel .sk {
+  background: linear-gradient(100deg, var(--panel) 40%, var(--panel-2) 50%, var(--panel) 60%);
+  background-size: 200% 100%; animation: shine 1.3s infinite linear;
+  border: 1px solid var(--border); border-radius: 14px;
+}
+.skel .card { height: 96px; }
+.skel .panel { height: 300px; }
+@keyframes shine { to { background-position: -200% 0; } }
+
+dialog {
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 24px; width: min(430px, 92vw);
+}
+dialog::backdrop { background: rgba(2, 6, 23, .7); backdrop-filter: blur(3px); }
+dialog label { display: block; margin: 14px 0 6px; color: var(--muted); font-size: 13px; }
+dialog input {
+  width: 100%; margin-top: 6px; padding: 10px 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); border-radius: 9px; font-size: 14px;
+}
+dialog .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+dialog button {
+  padding: 9px 16px; border-radius: 9px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+dialog .primary { background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); color: #fff; border: 0; }

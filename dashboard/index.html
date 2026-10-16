@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Odoo Sales Pulse — Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c3aed'/><circle cx='16' cy='16' r='7' fill='%230f172a'/><circle cx='16' cy='16' r='3' fill='%23e0e7ff'/></svg>"/>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="logo"></span>
+      <div>
+        <h1>Odoo Sales Pulse</h1>
+        <span id="company" class="company">—</span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="status">
+        <span id="dot" class="dot"></span><span id="status-text">bağlanıyor…</span>
+      </div>
+      <div class="range" id="range">
+        <button data-days="7">7g</button>
+        <button data-days="30" class="active">30g</button>
+        <button data-days="90">90g</button>
+      </div>
+      <button id="refresh" title="Yenile">↻</button>
+      <button id="settings-btn" title="Ayarlar">⚙</button>
+    </div>
+  </header>
+
+  <main id="content" hidden>
+    <section class="cards" id="kpi-cards"></section>
+
+    <section class="grid two">
+      <div class="panel">
+        <h2>Günlük Satış Hacmi</h2>
+        <div id="chart" class="chart"></div>
+        <p id="chart-empty" class="muted" hidden>Bu dönemde satış yok.</p>
+      </div>
+      <div class="panel">
+        <h2>🔎 En İyi Müşteriler</h2>
+        <ul id="top-customers" class="bars"></ul>
+        <p id="customers-empty" class="muted" hidden>Veri yok.</p>
+        <h2 style="margin-top:18px">📦 En Çok Satan Ürünler</h2>
+        <ul id="top-products" class="bars compact"></ul>
+        <p id="products-empty" class="muted" hidden>Veri yok.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>veri: <code id="generated-at">—</code></span>
+      <span>otomatik yenileme 60 sn</span>
+    </footer>
+  </main>
+
+  <div id="error" class="error" hidden></div>
+  <div id="skeleton" class="skel">
+    <div class="cards"><div class="sk card"></div><div class="sk card"></div><div class="sk card"></div><div class="sk card"></div></div>
+    <div class="grid two"><div class="sk panel"></div><div class="sk panel"></div></div>
+  </div>
+
+  <dialog id="settings">
+    <h3>Ayarlar</h3>
+    <label>Odoo adresi
+      <input id="cfg-url" placeholder="https://odoo.yasinkaracam.com" spellcheck="false"/>
+    </label>
+    <label>API Key
+      <input id="cfg-key" placeholder="sales_insights.api_key" type="password" spellcheck="false"/>
+    </label>
+    <p class="muted">Anahtar Odoo → Ayarlar → Teknik → Sistem Parametreleri → <code>sales_insights.api_key</code></p>
+    <div class="actions">
+      <button id="cfg-cancel">Vazgeç</button>
+      <button id="cfg-save" class="primary">Kaydet</button>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
