@@ -32,6 +32,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`buksu_stok_saha`** | Inventory & Project | Field material & stock management for construction/traffic projects. Saha depoları (`stock.location.is_saha_depo`), project & team-linked pickings (`stock.picking.proje_id`, `sorumlu_ekip`), project-based stock move reporting (smart buttons + search filters), material request wizard (`TransientModel`) that auto-creates outgoing transfers, and record-rule security split (saha ekibi: own projects only / depo sorumlusu: all). | `stock`, `project` |
 | **`telegram_notify`** | Notifications | Telegram bot notifications from Odoo. `action_confirm` override on `sale.order` (calls `super()`, then notifies), scheduled daily overdue-invoice report via `ir.cron` on `account.move`, shared private `telegram.notifier` abstract model, credentials stored in `ir.config_parameter` (never in code), failure-safe delivery (a Telegram outage never blocks a sale), and token-safe error logging. | `sale`, `account` |
 | **`mini_helpdesk`** | Support / Workflow | Ticket management with `mail.thread` chatter and field tracking, kanban by stage (`group_expand` shows empty stages), sequence numbering (`TCK/0001`), priority-based SLA deadline (stored computed field, `readonly=False`), SLA breach cron (chatter message, activity, flag to prevent duplicate alerts), search filters, and rich Telegram notifications on create, stage change, assignment, priority change, and SLA breach. | `mail`, `telegram_notify` |
+| **`sales_insights`** | Analytics / Reporting | SQL-view based sales analysis: `sales.analysis` model (`_auto=False`, `init()` builds a `CREATE OR REPLACE VIEW` over confirmed `sale_order_line` rows), Pivot + Graph views (customer/product/category breakdown), weekly `ir.cron` sending a top-5 customers + 7-day total Telegram summary (HTML via `telegram.notifier`), and record rules (`salesman: own sales only` / `manager: all`). `seed_sales.py` seeds 15 random demo orders over XML-RPC. | `sale`, `telegram_notify` |
 | **`odoo_rpc.py`** | Integration | External XML-RPC Python client demonstrating CRUD operations, domain filters, server-side aggregation (`read_group`), One2many command tuples, and model method execution. | `xmlrpc.client`, `python-dotenv` |
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
 | **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
@@ -44,6 +45,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
   <img src="docs/modules/buksu_stok_saha.svg" alt="buksu_stok_saha mimari diyagramı" width="100%"/>
   <img src="docs/modules/telegram_notify.svg" alt="telegram_notify mimari diyagramı" width="100%"/>
   <img src="docs/modules/mini_helpdesk.svg" alt="mini_helpdesk mimari diyagramı" width="100%"/>
+  <img src="docs/modules/sales_insights.svg" alt="sales_insights mimari diyagramı" width="100%"/>
 </div>
 
 ---
@@ -71,7 +73,8 @@ odoo-project/
 │       ├── nisa_pos_sync.svg
 │       ├── telegram_notify.svg
 │       ├── buksu_stok_saha.svg
-│       └── mini_helpdesk.svg
+│       ├── mini_helpdesk.svg
+│       └── sales_insights.svg
 └── addons/
     ├── my_first_module/            # Foundation module: ORM, wizards, actions & webhook
     │   ├── __init__.py
@@ -168,6 +171,14 @@ odoo-project/
     │   │   └── cron.xml            # SLA breach check (every 15 minutes)
     │   └── security/
     │       └── ir.model.access.csv
+    │
+    ├── sales_insights/              # SQL view analysis + weekly Telegram summary
+    │   ├── __init__.py
+    │   ├── __manifest__.py
+    │   ├── models/sales_analysis.py # _auto=False model + init() view def + cron method
+    │   ├── views/sales_analysis_views.xml  # Pivot + Graph + list
+    │   ├── data/cron.xml            # Weekly summary (ir.cron)
+    │   └── security/                # ir.rule (own sales / all) + ACL
     │
     └── buksu_stok_saha/            # Field Material & Stock Management (Saha Stok)
         ├── __init__.py
@@ -491,6 +502,28 @@ docker compose restart web
 
 ---
 
+### 8. `sales_insights` (SQL View Satış Analizi + Haftalık Telegram Özeti)
+
+<div align="center">
+  <img src="docs/modules/sales_insights.svg" alt="sales_insights modül kartı" width="100%"/>
+</div>
+
+Demonstrates Odoo's **SQL-view reporting pattern** (`_auto = False` model backed by a real PostgreSQL view) plus a cron-driven Telegram digest.
+
+- **`sales.analysis` model (`_auto = False`):**
+  - `init()` executes `CREATE OR REPLACE VIEW` joining `sale_order_line`, `sale_order`, `product_product`/`product_template` — only confirmed orders (`state in ('sale','done')`), excluding sections/notes (`display_type IS NULL`).
+  - Read-only analytical fields: order, customer, salesperson, product, category, company, `date_order`, `qty`, `amount` (untaxed).
+  - **Pivot + Graph views** ready for customer/product/category breakdowns — no ORM overhead, straight SQL aggregation.
+- **Weekly Telegram summary (`ir.cron`, 1 week interval):**
+  - `_telegram_weekly_summary()` uses `read_group` (`amount:sum`, top 5 by customer) over the last 7 days and sends a formatted HTML message via `telegram.notifier` — 💰 total + 🏆 best customers. Silent when there is nothing to report.
+- **Record rules (`ir.rule`):**
+  - *Salesperson:* sees only rows where `user_id = user.id`.
+  - *Sales Manager:* `[(1, '=', 1)]` — sees all.
+- **`seed_sales.py` (RPC Scripts → [5](#5-seed-demo-sales-seed_salespy)):**
+  - Creates 15 random confirmed sales orders over XML-RPC from real partners + `EXT-` products so the analysis views and Telegram summary have data to show.
+
+---
+
 ## 📡 RPC Scripts & Webhooks
 
 ### 1. Setting Up Local Python Environment
@@ -571,7 +604,17 @@ Typical verification flow:
 2. Second run → `unchanged` equals the product count.
 3. Edit a price in Odoo and rerun → log shows `updated EXT-1: ['list_price']` and the price returns to the source value.
 
-### 5. Calling Webhooks (cURL)
+### 5. Seed Demo Sales (`seed_sales.py`)
+
+Generates demo data for `sales_insights`: 15 random **confirmed** sale orders over XML-RPC using real company partners and `EXT-` products (run `sync_products.py` first), assigned to internal users.
+
+```bash
+python3 seed_sales.py
+```
+
+Each order: 1–3 lines × 1–5 units, random customer/salesperson — perfect to populate the `sales.analysis` SQL view, Pivot/Graph views, and the weekly Telegram summary before going live.
+
+### 6. Calling Webhooks (cURL)
 
 **Todo Webhook:**
 ```bash

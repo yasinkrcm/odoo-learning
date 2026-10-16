@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sales_analysis_pivot" model="ir.ui.view">
+        <field name="name">sales.analysis.pivot</field>
+        <field name="model">sales.analysis</field>
+        <field name="arch" type="xml">
+            <pivot string="Sales Analysis">
+                <field name="date_order" interval="month" type="row"/>
+                <field name="user_id" type="col"/>
+                <field name="amount" type="measure"/>
+                <field name="qty" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_sales_analysis_graph" model="ir.ui.view">
+        <field name="name">sales.analysis.graph</field>
+        <field name="model">sales.analysis</field>
+        <field name="arch" type="xml">
+            <graph string="Sales Analysis" type="bar">
+                <field name="date_order" interval="month"/>
+                <field name="amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_sales_analysis_list" model="ir.ui.view">
+        <field name="name">sales.analysis.list</field>
+        <field name="model">sales.analysis</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="date_order"/>
+                <field name="order_id"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <field name="product_id"/>
+                <field name="qty" sum="Total Qty"/>
+                <field name="amount" sum="Total Amount"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sales_analysis_search" model="ir.ui.view">
+        <field name="name">sales.analysis.search</field>
+        <field name="model">sales.analysis</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="user_id"/>
+                <field name="categ_id"/>
+                <filter name="last_12m" string="Last 12 Months"
+                        domain="[('date_order', '&gt;=', (context_today() - relativedelta(months=12)).strftime('%Y-%m-%d'))]"/>
+                <filter name="last_30d" string="Last 30 Days"
+                        domain="[('date_order', '&gt;=', (context_today() - relativedelta(days=30)).strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_user" string="Salesperson" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_product" string="Product" context="{'group_by': 'product_id'}"/>
+                    <filter name="group_categ" string="Product Category" context="{'group_by': 'categ_id'}"/>
+                    <filter name="group_month" string="Order Month" context="{'group_by': 'date_order:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sales_analysis" model="ir.actions.act_window">
+        <field name="name">Sales Analysis</field>
+        <field name="res_model">sales.analysis</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">{'search_default_last_12m': 1}</field>
+    </record>
+
+    <menuitem id="menu_sales_insights_root" name="Sales Insights" sequence="55"/>
+    <menuitem id="menu_sales_analysis" name="Sales Analysis" parent="menu_sales_insights_root"
+              action="action_sales_analysis" sequence="10"/>
+</odoo>

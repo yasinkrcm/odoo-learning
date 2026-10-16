@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cron_sales_weekly_summary" model="ir.cron">
+        <field name="name">Sales Insights: Weekly Telegram Summary</field>
+        <field name="model_id" ref="model_sales_analysis"/>
+        <field name="state">code</field>
+        <field name="code">model._telegram_weekly_summary()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">weeks</field>
+        <field name="active">True</field>
+    </record>
+</odoo>
