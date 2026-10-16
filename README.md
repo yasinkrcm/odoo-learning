@@ -233,6 +233,58 @@ Create a database (e.g. `odoo19_dev`). Keep the database name, admin email, and 
 
 ## ⚡ Applying Code Changes (Upgrade Workflow)
 
+### ➕ Yeni Modül Eklemek (hızlı şablon)
+
+Yeni bir modül eklerken minimum yapı:
+
+```
+addons/<new_module>/
+├── __init__.py                 # from . import models
+├── __manifest__.py
+├── models/
+│   ├── __init__.py             # from . import <model>
+│   └── <model>.py
+├── views/                      # <list> kullan — <tree> ParseError'dır!
+│   └── <model>_views.xml
+└── security/
+    ├── security.xml            # gruplar ÖNCE
+    └── ir.model.access.csv     # ACL'ler SONRA
+```
+
+Minimal `__manifest__.py`:
+
+```python
+{
+    'name': 'New Module',
+    'version': '19.0.1.0.0',
+    'summary': 'Kısa özet',
+    'depends': ['base'],          # gerçek bağımlılıkları yaz
+    'data': [
+        'security/security.xml',   # gruplar ACL'den önce!
+        'security/ir.model.access.csv',
+        'views/<model>_views.xml',
+    ],
+    'installable': True,
+    'application': False,
+    'license': 'LGPL-3',
+}
+```
+
+**Kurulum akışları:**
+
+- **Local:** `docker compose exec web odoo -d yasin-db -i <new_module> --stop-after-init` → `docker compose restart web` → *Update Apps List* gerek yok (CLI yeter); sonraki değişimler **`-u`** ister
+- **Canlı (VPS):** kodu `rsync` ile `~/odoo-live/addons/`'a taşı, sonra `docker compose run --rm web odoo -c /etc/odoo/odoo.conf -d odoo_prod -i <new_module> --stop-after-init` → `docker compose restart web`
+- Tam akış + tuzaklar: [`docs/deploy.md` → "Yeni Modül Yazıp Canlıya Eklemek"](docs/deploy.md#8-yeni-modül-yazıp-canlıya-eklemek-standart-akış)
+
+Modül kabul kuralları (repo standartları):
+
+- `security.xml` ACL CSV'den **önce**; transient/cron modeller da ACL ister
+- Odoo 19 deyimleri: `<list>`, `_compute_display_name`, `type='jsonrpc'`, `<chatter/>`
+- ACL satırındaki `group_id` external id'si security.xml'de daha önce tanımlı olmalı
+- Webhook/cron eklersen secrets `ir.config_parameter`'dan, hard-coded değil
+
+## ⚡ Applying Code Changes (Upgrade Workflow)
+
 In Odoo, an installed module does **not** reload Python or XML definitions simply by running `-i`. To reload changes, execute an upgrade (`-u`):
 
 ```bash
