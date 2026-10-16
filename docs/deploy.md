@@ -173,7 +173,36 @@ docker compose restart web
 | Günlük DB yedeği | `docker compose exec -T db pg_dump -U odoo -d odoo_prod > backups/daily-$(date +%F).sql` (cron) |
 | Filestore yedeği | `docker exec <web-container> tar cz -C /var/lib/odoo filestore/odoo_prod > backups/fs-$(date +%F).tgz` |
 
-## 8. Sık Karşılaşılan Sorunlar (bugün gerçekten yaşananlar)
+## 8. Yeni Modül Yazıp Canlıya Eklemek (standart akış)
+
+```bash
+# 1) LOCAL: yaz, test et
+cd ~/odoo-project
+# addons/my_new_module/ ...  (manifest + models + views + security)
+docker compose exec web odoo -d yasin-db -i my_new_module --stop-after-init
+docker compose restart web
+git add addons/my_new_module && git commit -m "feat: add my_new_module" && git push origin main
+
+# 2) SUNUCU: kodu taşı + yükle
+rsync -av --delete ~/odoo-project/addons/ yasin@<sunucu-ip>:~/odoo-live/addons/
+ssh yasin@<sunucu-ip>
+cd ~/odoo-live
+docker compose run --rm web odoo -c /etc/odoo/odoo.conf -d odoo_prod -i my_new_module --stop-after-init
+docker compose restart web
+```
+
+Kural notları:
+- **İlk kurulum `-i`** — sonraki kod/XML değişimleri `-u` ile upgrade ister
+- Sunucuda upgrade **mutlaka `docker compose run --rm web`** (exec içindeki odoo
+  çalışan 8069'a çarpar: "Address already in use")
+- `__manifest__.py` `data` sırası: security.xml (gruplar) → ir.model.access.csv → views
+- Odoo 19 tuzakları: `<list>` kullan (`<tree>` ParseError), `stock.move.name`
+  kalktı, `user_ids`/`category_id` kaldırıldı — şüphede container'daki çekirdek
+  kaynakları doğrula: `docker compose exec web grep -rn "..." /usr/lib/python3/dist-packages/odoo/addons/<app>/`
+- Yeni kalıcı model + transient + cron olan her bileşen ACL gerektirir;
+  ACL satırındaki `group_id` external id'si security.xml'de önce tanımlanmalı
+
+## 9. Sık Karşılaşılan Sorunlar (bugün gerçekten yaşananlar)
 
 | Belirti | Neden | Çözüm |
 |---|---|---|
