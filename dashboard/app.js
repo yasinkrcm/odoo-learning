@@ -16,9 +16,12 @@ const fmtMoney = (v, cur) =>
 const fmtNum = (v) => new Intl.NumberFormat('tr-TR').format(v);
 
 async function fetchKpi() {
-  const url = `${state.cfg.url.replace(/\/$/, '')}/sales_insights/kpi?days=${state.days}`;
-  const headers = { 'X-API-Key': state.cfg.key };
-  const res = await fetch(url, { headers });
+  const q = new URLSearchParams({
+    days: state.days,
+    api_key: state.cfg.key,
+  });
+  const url = `${state.cfg.url.replace(/\/$/, '')}/sales_insights/kpi?${q}`;
+  const res = await fetch(url);
   if (res.status === 403) throw new Error('API key geçersiz veya boş.');
   if (!res.ok) throw new Error('Odoo cevabı: ' + res.status);
   return res.json();
