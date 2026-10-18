@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="finance_ticker.FinanceTicker">
+        <div class="o_finance_ticker" t-if="state.items.length">
+            <div t-foreach="state.items" t-as="item" t-key="item.key"
+                 t-attf-class="o_ft_card o_ft_{{ trend(item) }}">
+                <div class="o_ft_top">
+                    <span class="o_ft_label" t-esc="item.label"/>
+                    <span class="o_ft_value">
+                        <t t-esc="format(item)"/> <small t-esc="item.currency"/>
+                    </span>
+                </div>
+                <div class="o_ft_bottom">
+                    <svg class="o_ft_spark" viewBox="0 0 56 16" preserveAspectRatio="none">
+                        <polyline fill="none" stroke="currentColor" stroke-width="1.5"
+                                  stroke-linejoin="round" stroke-linecap="round"
+                                  t-att-points="sparkline(item)"/>
+                    </svg>
+                    <span class="o_ft_change">
+                        <t t-if="item.change &lt; 0">↓</t><t t-else="">↑</t>
+                        %<t t-esc="pct(item)"/>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-inherit="web.NavBar" t-inherit-mode="extension">
+        <xpath expr="//t[@t-call='web.NavBar.AppsMenu']" position="after">
+            <span class="o_ft_user" t-if="!this.ui.isSmall">Yasin Karaçam</span>
+        </xpath>
+        <xpath expr="//div[hasclass('o_menu_systray')]" position="before">
+            <button type="button" class="o_ft_search" t-on-click="openFinder">
+                <i class="fa fa-search"/>
+                <span class="o_ft_search_text">Müşteri, ürün, sipariş ara...</span>
+                <kbd class="o_ft_kbd">⌘K</kbd>
+            </button>
+        </xpath>
+    </t>
+
+    <t t-inherit="web.WebClient" t-inherit-mode="extension">
+        <xpath expr="//NavBar" position="after">
+            <FinanceTicker/>
+        </xpath>
+    </t>
+
+</templates>

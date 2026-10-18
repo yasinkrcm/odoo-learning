@@ -1,0 +1,148 @@
+$ft-navy: #1c2045;
+$ft-strip: #15183a;
+$ft-card: #1f2450;
+$ft-border: rgba(255, 255, 255, 0.12);
+$ft-up: #2ecc71;
+$ft-down: #ff5c5c;
+
+// ---- Navbar (koyu lacivert) ----
+.o_navbar .o_main_navbar {
+    background: $ft-navy !important;
+    color: #fff;
+
+    .o_ft_user {
+        display: flex;
+        align-items: center;
+        padding: 0 14px 0 6px;
+        font-size: 18px;
+        font-weight: 700;
+        white-space: nowrap;
+        color: #fff;
+    }
+
+    .o_ft_search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 12px 0 auto;
+        padding: 4px 10px;
+        width: 300px;
+        max-width: 30vw;
+        height: 30px;
+        align-self: center;
+        border: 1px solid $ft-border;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.07);
+        color: rgba(255, 255, 255, 0.85);
+        cursor: text;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .o_ft_search_text {
+            flex: 1;
+            text-align: left;
+            font-size: 13px;
+            opacity: 0.75;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .o_ft_kbd {
+            padding: 1px 6px;
+            font-size: 11px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.18);
+            color: inherit;
+        }
+    }
+
+    .o_menu_systray {
+        margin-left: 0 !important;
+    }
+}
+
+// ---- Fiyat şeridi ----
+.o_finance_ticker {
+    display: flex;
+    gap: 8px;
+    padding: 6px 10px;
+    background: $ft-strip;
+    overflow-x: auto;
+    flex: 0 0 auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    .o_ft_card {
+        flex: 1 1 0;
+        min-width: 138px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 5px 9px;
+        border: 1px solid $ft-border;
+        border-radius: 8px;
+        background: $ft-card;
+        white-space: nowrap;
+
+        .o_ft_top {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .o_ft_label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .o_ft_value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+
+            small {
+                font-weight: 400;
+                opacity: 0.8;
+            }
+        }
+
+        .o_ft_bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .o_ft_spark {
+            width: 56px;
+            height: 14px;
+        }
+
+        .o_ft_change {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        &.o_ft_up .o_ft_spark,
+        &.o_ft_up .o_ft_change {
+            color: $ft-up;
+        }
+
+        &.o_ft_down .o_ft_spark,
+        &.o_ft_down .o_ft_change {
+            color: $ft-down;
+        }
+    }
+}
+
+@media (max-width: 767px) {
+    .o_navbar .o_main_navbar .o_ft_search {
+        display: none;
+    }
+}

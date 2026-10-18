@@ -8,12 +8,12 @@
     <img src="https://img.shields.io/github/license/yasinkrcm/odoo-learning?style=for-the-badge" alt="License"/>
     <img src="https://img.shields.io/github/last-commit/yasinkrcm/odoo-learning/main?logo=git&logoColor=white&style=for-the-badge" alt="Last commit"/>
   </p>
-  <p><em>Containerized Odoo 19 development showcase — 7 custom modules, XML-RPC clients, JSON-RPC webhooks, real-world business flows.</em></p>
+  <p><em>Containerized Odoo 19 development showcase — 8 custom modules, a vanilla-JS dashboard, XML-RPC clients, JSON-RPC webhooks, real-world business flows.</em></p>
 </div>
 
 # Odoo 19 Custom Addons & Architecture: Modules, ORM, Security, POS Sync, Progress Billing & RPC
 
-A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, seven custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, a helpdesk with SLA tracking, sales customization, and full-stack ORM patterns), external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
+A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, eight custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, a helpdesk with SLA tracking, sales analytics, a live finance ticker, sales customization, and full-stack ORM patterns), a standalone vanilla-JS dashboard, external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
 
 <div align="center">
   <img src="docs/architecture.svg" alt="Sistem Mimarisi" width="100%"/>
@@ -37,6 +37,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
 | **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
 | **`dashboard/`** | Frontend / UI | Standalone vanilla JS analytics dashboard (no framework, no build step) over the `sales_insights` KPI API: KPI cards with trend badge, animated daily bar chart with tooltips, top customer/product bar lists, 7/30/90-day range switcher, 60s auto-refresh, live status dot, settings dialog persisting URL/API key in localStorage. Deployment: any static host (GitHub Pages, nginx location, local `python3 -m http.server`) — CORS `*` lets it talk to any Odoo exposing the KPI API. | `GET /sales_insights/kpi` |
+| **`finance_ticker`** | UI / Utilities | Live currency & gold ticker embedded under the backend navbar. OWL component patches `web.NavBar`; JSON-RPC controller `/finance_ticker/data` (auth=user, 60s in-process cache) pulls USD/EUR from `open.er-api.com` and the XAU ounce from `gold-api.com` (both keyless), computes gram-gold items (22k, çeyrek, yarım, tam, cumhuriyet) by purity, tracks daily open prices for % change and a 24-point sparkline history. Assets: `ticker.js` + `ticker.xml` + `ticker.scss` (dark navy navbar, green/red trend cards). | `web` |
 
 <div align="center">
   <img src="docs/modules/buksu_hakedis.svg" alt="buksu_hakedis mimari diyagramı" width="100%"/>
@@ -48,6 +49,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
   <img src="docs/modules/mini_helpdesk.svg" alt="mini_helpdesk mimari diyagramı" width="100%"/>
   <img src="docs/modules/sales_insights.svg" alt="sales_insights mimari diyagramı" width="100%"/>
   <img src="docs/dashboard.svg" alt="Sales Pulse Dashboard mimari diyagramı" width="100%"/>
+  <img src="docs/modules/finance_ticker.svg" alt="finance_ticker mimari diyagramı" width="100%"/>
 </div>
 
 ---
@@ -81,7 +83,8 @@ odoo-project/
 │       ├── telegram_notify.svg
 │       ├── buksu_stok_saha.svg
 │       ├── mini_helpdesk.svg
-│       └── sales_insights.svg
+│       ├── sales_insights.svg
+│       └── finance_ticker.svg
 └── addons/
     ├── my_first_module/            # Foundation module: ORM, wizards, actions & webhook
     │   ├── __init__.py
@@ -186,6 +189,12 @@ odoo-project/
     │   ├── views/sales_analysis_views.xml  # Pivot + Graph + list
     │   ├── data/cron.xml            # Weekly summary (ir.cron)
     │   └── security/                # ir.rule (own sales / all) + ACL
+    │
+    ├── finance_ticker/              # Live currency & gold ticker under the navbar
+    │   ├── __init__.py
+    │   ├── __manifest__.py          # assets: ticker.js / ticker.xml / ticker.scss
+    │   ├── controllers/main.py      # /finance_ticker/data (60s cache, keyless APIs)
+    │   └── static/src/              # OWL component patching web.NavBar
     │
     └── buksu_stok_saha/            # Field Material & Stock Management (Saha Stok)
         ├── __init__.py
@@ -537,6 +546,36 @@ Demonstrates Odoo's **SQL-view reporting pattern** (`_auto = False` model backed
   - `GET /sales_insights/kpi?days=N&api_key=<key>` (Odoo; cors='*', api key `sales_insights.api_key` system parameter) → amount, prev period, orders, qty, avg order, daily series, top 5 customers, top 5 products, SLA-breach count.
   - `/dashboard/` — framework-free (vanilla JS + CSS) dark analytics UI: KPI cards, animated daily bar chart, top-customer/product bars, 7/30/90-day ranges, auto-refresh 60s, settings dialog (URL + API key in localStorage). Works against any Odoo instance exposing the KPI API (CORS enabled).
   - **Local test:** `python3 -m http.server 8613 -d dashboard` → open `http://localhost:8613` → ⚙ → URL `http://localhost:8069` + api key. Odoo's CORS preflight has a fixed allow-header list, so the **API key travels in the query string** (no custom header = no preflight).
+
+---
+
+### 9. `finance_ticker` (Navbar Canlı Döviz & Altın Ticker'ı)
+
+<div align="center">
+  <img src="docs/modules/finance_ticker.svg" alt="finance_ticker modül kartı" width="100%"/>
+</div>
+
+Turns the Odoo backend into a mini **Bloomberg-style terminal**: a live currency/gold strip rendered under the navbar.
+
+- **Backend (`controllers/main.py`):**
+  - `GET /finance_ticker/data` (JSON-RPC, `auth=user` — logged-in users only).
+  - **Keyless free sources:** USD rates from `open.er-api.com/v6/latest/USD` and the XAU gold ounce from `api.gold-api.com/price/XAU` (8s timeouts each).
+  - **60-second in-process cache** (`_state`) so concurrent tabs don't hammer the upstream APIs; on failure the last payload is served and after a fresh-boot failure `{'items': [], 'error': True}` is returned gracefully.
+  - **Turkish gold prices computed from the ounce:** gram has altın × purity/karşılık factors → 22 ayar (0.916), çeyrek (1.754 g), yarım (3.508 g), tam (7.016 g), cumhuriyet (7.216 g).
+  - **Daily change tracking:** the first fetched value of each day is the baseline (`_state.open`), `change` is computed against it; each item also carries a sparkline `history` (last 24 points).
+- **Frontend (OWL, `web.assets_backend`):**
+  - `FinanceTicker` OWL component fetches `/finance_ticker/data` via `rpc`, re-renders every 60 s.
+  - Patches `web.NavBar` (template inheritance) to inject the strip below the apps menu; `ticker.scss` restyles the whole navbar dark navy (`#1c2045`) with search field styling.
+  - Cards show label, numeric value (`Intl.NumberFormat tr-TR`), currency symbol, live **SVG sparkline** drawn from `history`, and an arrow + % change with green/red trend classes.
+
+**Install / test:**
+
+```bash
+docker compose exec web odoo -d yasin-db -i finance_ticker --stop-after-init
+docker compose restart web
+```
+
+Backend'e giriş yaptığında navbar'ın altında şerit görünür — sekme açık kaldığı sürece her 60 saniyede fiyatlar tazelenir.
 
 ---
 

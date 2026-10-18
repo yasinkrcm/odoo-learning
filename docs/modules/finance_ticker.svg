@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="220" viewBox="0 0 940 220" role="img" aria-label="finance_ticker">
+  <defs>
+    <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c2045"/><stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="940" height="220" rx="12" fill="#ffffff" stroke="#c7d2fe"/>
+  <rect x="1" y="1" width="938" height="44" rx="11" fill="url(#h)"/>
+  <text x="24" y="29" font-family="Helvetica,Arial,sans-serif" font-size="17" font-weight="700" fill="#ffffff">finance_ticker — Navbar Canlı Döviz &amp; Altın Şeridi</text>
+  <text x="916" y="28" text-anchor="end" font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#e0e7ff">depends: web</text>
+
+  <text x="24" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#3730a3">KATMANLAR</text>
+  <g font-family="Helvetica,Arial,sans-serif" font-size="11.5" fill="#3730a3">
+    <rect x="24" y="86" width="196" height="30" rx="15" fill="#e0e7ff" stroke="#a5b4fc"/>
+    <text x="122" y="105" text-anchor="middle" font-weight="600">controllers/main.py</text>
+    <rect x="24" y="122" width="196" height="30" rx="15" fill="#e0e7ff" stroke="#a5b4fc"/>
+    <text x="122" y="141" text-anchor="middle" font-weight="600">Owl component (NavBar patch)</text>
+    <rect x="24" y="158" width="196" height="30" rx="15" fill="#e0e7ff" stroke="#a5b4fc"/>
+    <text x="122" y="177" text-anchor="middle" font-weight="600">ticker.js · xml · scss (assets)</text>
+  </g>
+
+  <text x="470" y="76" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#3730a3">ÖNE ÇIKANLAR</text>
+  <g font-family="Helvetica,Arial,sans-serif" font-size="12.5" fill="#334155">
+    <circle cx="476" cy="95" r="3" fill="#4f46e5"/><text x="488" y="99">/finance_ticker/data (jsonrpc, auth=user) · 60 sn cache</text>
+    <circle cx="476" cy="119" r="3" fill="#4f46e5"/><text x="488" y="123">Ücretsiz kaynaklar: open.er-api.com + gold-api.com (ons XAU)</text>
+    <circle cx="476" cy="143" r="3" fill="#4f46e5"/><text x="488" y="147">Gram hesapları: 22 ayar · çeyrek · yarım · tam · cumhuriyet</text>
+    <circle cx="476" cy="167" r="3" fill="#4f46e5"/><text x="488" y="171">Günün açılışına göre % değişim + 24 noktalı sparkline</text>
+    <circle cx="476" cy="191" r="3" fill="#4f46e5"/><text x="488" y="195">Owl NavBar patch: koyu lacivert navbar + canlı kartlar</text>
+  </g>
+</svg>
