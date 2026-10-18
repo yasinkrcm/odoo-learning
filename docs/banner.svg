@@ -35,5 +35,5 @@
 
   <text x="146" y="74" font-family="Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#f8fafc">Odoo 19 Custom Addons</text>
   <text x="148" y="106" font-family="Helvetica,Arial,sans-serif" font-size="19" fill="#cbd5e1">Modüler uygulama geliştirme · RPC Entegrasyonları · Webhook'lar · QWeb Raporlar</text>
-  <text x="148" y="134" font-family="Helvetica,Arial,sans-serif" font-size="15" fill="#94a3b8">7 custom module · Docker + PostgreSQL 15 · XML-RPC client scripts · JSON-RPC endpoints</text>
+  <text x="148" y="134" font-family="Helvetica,Arial,sans-serif" font-size="15" fill="#94a3b8">8 custom module · Docker + PostgreSQL 15 · XML-RPC client scripts · JSON-RPC endpoints</text>
 </svg>
