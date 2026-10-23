@@ -9,7 +9,6 @@ from odoo import http
 _logger = logging.getLogger(__name__)
 
 CACHE_TTL = 60  # saniye
-HISTORY_LEN = 24  # sparkline nokta sayısı
 OUNCE_GRAMS = 31.1035
 
 # Gram has altına göre hesaplanan ürünler (22 ayar = 0.916 saflık)
@@ -22,7 +21,10 @@ GOLD_ITEMS = [
     ("cumhuriyet", "Cumhuriyet Altını", 7.216 * 0.916),
 ]
 
-_state = {"ts": 0, "payload": None, "day": None, "open": {}, "history": {}}
+# Gün başına history sınırı: 60 sn TTL ile borsa günü (~700 nokta) için güvenli üst sınır
+HISTORY_DAY_CAP = 800
+
+_state = {"ts": 0, "payload": None, "day": None, "history": {}}
 
 
 def _fetch_raw():
@@ -40,15 +42,20 @@ def _fetch_raw():
 
 
 def _track(key, value):
-    """Günün ilk değerine göre % değişim ve sparkline geçmişi tut."""
+    """Günün ilk değerinden bugüne % değişim + aynı pencereyi gösteren sparkline.
+
+    history günün ilk çağrısından itibaren tutulur, böylece sparkline eğimi
+    ile gösterilen % değişim daima aynı zaman penceresini yansıtır.
+    """
     today = date.today().isoformat()
     if _state["day"] != today:
         _state["day"] = today
-        _state["open"] = {}
-    base = _state["open"].setdefault(key, value)
+        _state["history"] = {}
     hist = _state["history"].setdefault(key, [])
+    if len(hist) >= HISTORY_DAY_CAP:
+        del hist[0]
     hist.append(value)
-    del hist[:-HISTORY_LEN]
+    base = hist[0]
     change = ((value - base) / base * 100) if base else 0.0
     return round(change, 2), list(hist)
 
