@@ -655,10 +655,11 @@ docker compose restart web
 `telegram_notify` odoo → Telegram bildirimi yapar; bu modül geri yönü ekler: **izinli Telegram kullanıcısı Odoo'yu sorgular.**
 
 - **Kabul kanalları (birini aktif kullan):**
-  - **Polling (varsayılan, lokal dahil):** *Telegram Bot: Poll Updates* her dakika `getUpdates` çeker (`timeout=3`, diğer cronları bloklamaz); webhook aktifken cron kendini devre dışı bırakır (`telegram_bot.webhook_url` ICP'si doluysa no-op).
-  - **Webhook (VPS):** `POST /telegram_bot/webhook` (`auth=public`); `X-Telegram-Bot-Api-Secret-Token` header'ı `telegram_bot.webhook_secret` ICP'siyle `hmac.compare_digest` doğrulanır (nisa_pos_sync deseni). Kayıt: `bot._register_webhook('https://example.com', <secret>)` (odoo shell) veya `setWebhook` curl.
+  - **Long-poll thread (varsayılan, lokal dahil):** mesaj çekimi daemon bir thread'de `getUpdates (timeout=50)` ile akar — cevap saniyeler içinde. 1 dakikalık cron (*Telegram Bot: Poll Updates*) sadece watchdog durudur; thread'i spawn eder ve webhook aktifse cron/thread kendini devre dışı bırakır (`telegram_bot.webhook_url` ICP'si doluysa no-op).
+  - **Webhook (VPS):** `POST /telegram_bot/webhook` (`auth=public`); `X-Telegram-Bot-Api-Secret-Token` header'ı `telegram_bot.webhook_secret` ICP'siyle `hmac.compare_digest` doğrulanır (nisa_pos_sync deseni). Kayıt: `bot._register_webhook('https://example.com', <secret>)` (odoo shell) veya `setWebhook` curl — webhook'a geçince polling thread kendini durdurur.
 - **Yetki:** Telegram **user id** beyaz listesi (`telegram_bot.allowed_telegram_ids`, virgülle ayrılmış). Kayıt dışı kullanıcı tek seferlik ret cevabı alır; telegram id'si cevapta görünür (getUpdates'ten öğrenilir).
 - **Komutlar (HTML cevap, `html_escape` korumalı):**
+  - Bot cevaplari **tıklanabilir inline keyboard** taşır (🧾 Sipariş · 📈 Rapor · 👥 Müşteri · 📦 Stok — `callback_data` → `answerCallbackQuery` + dispatch); `setMyCommands` ile `/` tuşunun yazım menüsüne de 6 komut kaydedilir.
   - `/yardim` — komut listesi ( `/start`, `/help` alias)
   - `/siparis [müşteri]` — son 5 onaylı `sale.order` (referans, müşteri, tutar, tarih)
   - `/stok ürün adı` — `product.product` (display_name/default_code) ilk 5: stok + liste fiyatı
@@ -672,7 +673,7 @@ docker compose restart web
 
 1. Bot token zaten `telegram_notify.bot_token` olarak ayarlı.
 2. *Settings → Technical → System Parameters*'da `telegram_bot.allowed_telegram_ids = <telegram user id>` gir.
-3. *Scheduled Actions → Telegram Bot: Poll Updates → Run Manually* (veya 1 dakika bekle) — Telegram'ından `/yardim` gönder, cevap gelir.
+3. Bekle ya da *Scheduled Actions → Telegram Bot: Poll Updates → Run Manually* (watchdog thread'i doğurur) — Telegram'ından `/yardim` gönder, saniyeler içinde cevap gelir; `/` yazınca da komut önerileri listelenir.
 
 **Setup (VPS, webhook):**
 
