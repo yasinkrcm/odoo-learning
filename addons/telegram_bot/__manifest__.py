@@ -1,7 +1,7 @@
 {
     'name': 'Telegram Bot',
     'version': '19.0.1.0.0',
-    'summary': 'İki yönlü Telegram botu: sipariş/stok/müşteri sorguları, bilet, KPI raporu',
+    'summary': 'İki yönlü Telegram botu: adım adım bilet, sorgular, KPI raporu',
     'description': """
 Two-way Telegram bridge for Odoo 19.
 Receives updates via webhook (VPS) or getUpdates polling (local cron),

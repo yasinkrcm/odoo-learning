@@ -41,11 +41,11 @@ _POLL_THREAD = None  # proses başına tek long-poll thread
 
 # Telegram "//" menüsünde görünecek yardımcı komutlar (setMyCommands)
 BOT_COMMANDS = [
+    ('bilet', 'Yeni helpdesk ticket (adım adım sorar)'),
     ('siparis', 'Son 5 onaylı sipariş'),
     ('stok', 'Ürün stok ve fiyat'),
     ('musteri', 'Müşteri arama'),
     ('rapor', 'Satış özeti, örn. /rapor 7'),
-    ('bilet', 'Helpdesk ticket oluştur'),
     ('yardim', 'Komut listesi'),
 ]
 
@@ -97,10 +97,11 @@ class TelegramBot(models.AbstractModel):
         """Her cevabın altına eklenen tıklanabilir kısayol menüsü."""
         return {'inline_keyboard': [
             [
-                {'text': '🧾 Son siparişler', 'callback_data': 'cmd:/siparis'},
+                {'text': '🎫 Yeni bilet', 'callback_data': 'cmd:/bilet'},
                 {'text': '📈 Rapor (7 gün)', 'callback_data': 'cmd:/rapor 7'},
             ],
             [
+                {'text': '🧾 Son siparişler', 'callback_data': 'cmd:/siparis'},
                 {'text': '👥 Müşteri ara', 'callback_data': 'cmd:/musteri'},
                 {'text': '📦 Stok ara', 'callback_data': 'cmd:/stok'},
             ],
@@ -150,23 +151,31 @@ class TelegramBot(models.AbstractModel):
             return False
         username = sender.get('username') or sender.get('first_name') or ''
 
+        self = self.with_context(tg_chat_id=str(chat_id))
         if sender.get('id') not in self._allowed_ids():
             reply = self._deny(sender)
         else:
             parts = text.split(' ', 1)
             arg = parts[1].strip() if len(parts) > 1 else ''
-            reply = self._dispatch(self._clean_command(parts[0]), arg)
+            flow = self._get_flow(chat_id)
+            if flow and not parts[0].startswith('/'):
+                reply = self._flow_step(flow, text)
+            else:
+                if flow:
+                    flow.unlink()
+                reply = self._dispatch(self._clean_command(parts[0]), arg, chat_id)
 
+        text_out, markup = self._send_result(reply)
         self.env['telegram.bot.log'].sudo().create({
             'chat_id': str(chat_id),
             'username': username,
             'command': text[:255],
-            'reply': reply,
+            'reply': text_out,
         })
-        return self._send_to(chat_id, reply, reply_markup=self._cmd_keyboard())
+        return self._send_to(chat_id, text_out, reply_markup=markup)
 
     def _handle_callback(self, callback_query):
-        """Buton tıklamaları: callback_data 'cmd:<komut> [arg]'."""
+        """Buton tıklamaları: callback_data 'cmd:<komut> [arg]' / 'f...:<value>'."""
         callback_query_id = callback_query.get('id')
         self._api('answerCallbackQuery', {'callback_query_id': callback_query_id})
         sender = callback_query.get('from') or {}
@@ -174,22 +183,26 @@ class TelegramBot(models.AbstractModel):
         chat_id = (callback_query.get('message') or {}).get('chat', {}).get('id')
         username = sender.get('username') or sender.get('first_name') or ''
 
+        self = self.with_context(tg_chat_id=str(chat_id))
         if sender.get('id') not in self._allowed_ids():
             reply = self._deny(sender)
         elif data.startswith('cmd:'):
             parts = data[4:].strip().split(' ', 1)
             arg = parts[1].strip() if len(parts) > 1 else ''
-            reply = self._dispatch(self._clean_command(parts[0]), arg)
+            reply = self._dispatch(self._clean_command(parts[0]), arg, chat_id)
+        elif data.startswith('f') and ':' in data:
+            reply = self._flow_choice(chat_id, data)
         else:
             reply = self.cmd_yardim()
 
+        text_out, markup = self._send_result(reply)
         self.env['telegram.bot.log'].sudo().create({
             'chat_id': str(chat_id),
             'username': username,
             'command': '[button] %s' % data[:240],
-            'reply': reply,
+            'reply': text_out,
         })
-        return self._send_to(chat_id, reply, reply_markup=self._cmd_keyboard())
+        return self._send_to(chat_id, text_out, reply_markup=markup)
 
     def _deny(self, sender):
         return (
@@ -209,7 +222,7 @@ class TelegramBot(models.AbstractModel):
             command = '/' + command
         return command
 
-    def _dispatch(self, command, arg):
+    def _dispatch(self, command, arg, chat_id=None):
         handler = {
             '/start': lambda a: self.cmd_yardim(),
             '/help': lambda a: self.cmd_yardim(),
@@ -226,20 +239,180 @@ class TelegramBot(models.AbstractModel):
             '/stok': '/stok ürün adı',
             '/musteri': '/musteri müşteri adı',
             '/rapor': '/rapor [gün sayısı, örn. 7]',
-            '/bilet': '/bilet başlık',
         }
         if command in usage and not arg:
             return 'ℹ️ Kullanım: <code>%s</code>' % usage[command]
         return handler(arg)
 
+    def _get_flow(self, chat_id):
+        return self.env['telegram.bot.flow'].sudo().search(
+            [('chat_id', '=', str(chat_id))], limit=1)
+
+    def _send_result(self, reply):
+        """(metin, anahtarlık) ikilisini metne ayrıştırır."""
+        if isinstance(reply, tuple):
+            return reply if len(reply) == 2 else (reply[0], None)
+        return reply, self._cmd_keyboard()
+
+    # ------------------------------------------------------------------
+    # Step-by-step ticket flow (/bilet)
+    # ------------------------------------------------------------------
+
+    def _flow_keyboard(self, rows):
+        return {'inline_keyboard': [[{'text': label, 'callback_data': data}
+                                     for label, data in row] for row in rows]}
+
+    def cmd_bilet(self, arg):
+        chat_id = self.env.context.get('tg_chat_id')
+        if 'mini.helpdesk.ticket' not in self.env:
+            return 'ℹ️ mini_helpdesk kurulu değil — ticket oluşturulamadı.'
+        flow = self._get_flow(chat_id)
+        if arg.lower() in ('iptal', 'cancel'):
+            if flow:
+                flow.unlink()
+                return '🚫 Ticket akışı iptal edildi.'
+            return 'ℹ️ Açık bilet akışı yok.'
+        cancelled = ''
+        if flow:
+            flow.unlink()
+            cancelled = '♻️ Eski akış sıfırlandı.\n'
+        flow = self.env['telegram.bot.flow'].sudo().create({'chat_id': str(chat_id)})
+        if arg:
+            flow.title = arg[:100]
+            flow.step = 'partner'
+            return cancelled + self._ask_partner_name(flow)
+        flow.step = 'title'
+        return cancelled + (
+            '🎫 <b>Bilet başlığı</b> — başlığı tek mesaj olarak yaz.\n'
+            'Vazgeç: "iptal"')
+
+    def _ask_partner_name(self, flow):
+        return (
+            '🏢 <b>Müşteri</b> — müşteri adını yaz, eşleşenleri butonlarla sunayım.',
+            {'inline_keyboard': [[{'text': '🚫 Müşteri olmadan devam',
+                                   'callback_data': 'fskip'}]]},
+        )
+
+    def _ask_priority(self):
+        return (
+            '🎯 <b>Öncelik</b> seç:',
+            self._flow_keyboard([
+                [('🟢 Düşük', 'fprio:0'), ('🔵 Normal', 'fprio:1')],
+                [('🟠 Yüksek', 'fprio:2'), ('🔴 Acil', 'fprio:3')],
+            ]),
+        )
+
+    def _ask_assignee(self):
+        # Odoo 19: res.groups.users kaldırıldı — res.users.all_group_ids üzerinden
+        users = self.env['res.users'].sudo().search(
+            [('all_group_ids', 'in', self.env.ref('base.group_user').id)],
+            limit=8, order='id')
+        rows = [[u.name, 'fuser:%d' % u.id] for u in users]
+        chunked = [rows[i:i + 2] for i in range(0, len(rows), 2)]
+        chunked.append([('🚫 Atama olmadan devam', 'fskip')])
+        return ('👤 <b>Atanacak kişi</b> seç:',
+                self._flow_keyboard(chunked))
+
+    def _ask_description(self):
+        return (
+            '📝 <b>Açıklama</b> — tek mesaj yaz veya "skip" gönder. Vazgeç: "iptal".',
+        )
+
+    def _flow_step(self, flow, text):
+        """Metin cevabını aktif adım işler."""
+        if text.lower() in ('iptal', 'cancel'):
+            flow.unlink()
+            return '🚫 Ticket akışı iptal edildi.'
+        step = flow.step
+        if step == 'title':
+            flow.title = text[:100]
+            flow.step = 'partner'
+            return self._ask_partner_name(flow)
+        if step == 'partner':
+            partners = self.env['res.partner'].sudo().search(
+                [('name', 'ilike', text)], limit=6)
+            if not partners:
+                return ('❌ "%s" bulunamadı. Tekrar müşteri adı yaz veya "iptal".' %
+                        self._h(text))
+            if len(partners) == 1:
+                flow.partner_id = partners[0]
+                flow.step = 'priority'
+                return self._ask_priority()
+            rows = [[p.name or '-', 'fpart:%d' % p.id] for p in partners]
+            rows.append(['🚫 Müşteri olmadan devam', 'fskip'])
+            return (
+                '🏢 <b>Müşteri</b> — eşleşenler, birini seç ya da adı düzelt:',
+                self._flow_keyboard([rows[i:i + 2] for i in range(0, len(rows), 2)]),
+            )
+        if step == 'description':
+            flow.description = '' if text.lower() == 'skip' else text
+            return self._finish_flow(flow)
+        flow.unlink()
+        return '🚫 Ticket akışı sıfırlandı.'
+
+    def _flow_choice(self, chat_id, data):
+        """Buton cevaplarını aktif adım işler: fpart/id, fprio/kod, fuser/id, fskip."""
+        flow = self._get_flow(chat_id)
+        if not flow:
+            return 'ℹ️ Bilet akışı yok. <code>/bilet</code> ile başla.'
+        if flow.step in ('title', 'description'):
+            return 'ℹ️ Bu adımda buton yok — yazı bekleniyor.'
+        prefix, _, value = data.partition(':')
+        if prefix == 'fpart':
+            flow.partner_id = int(value)
+            flow.step = 'priority'
+            return self._ask_priority()
+        if prefix == 'fprio':
+            flow.priority = value
+            flow.step = 'assignee'
+            return self._ask_assignee()
+        if prefix == 'fuser':
+            flow.user_id = int(value)
+            flow.step = 'description'
+            return self._ask_description()
+        if prefix == 'fskip':
+            if flow.step == 'partner':
+                flow.step = 'priority'
+                return self._ask_priority()
+            if flow.step == 'assignee':
+                flow.step = 'description'
+                return self._ask_description()
+            flow.unlink()
+            return '🚫 Ticket akışı iptal edildi.'
+        return self.cmd_yardim()
+
+    def _finish_flow(self, flow):
+        vals = {'name': flow.title or ''}
+        if flow.partner_id:
+            vals['partner_id'] = flow.partner_id.id
+        vals['priority'] = flow.priority or '1'
+        if flow.user_id:
+            vals['user_id'] = flow.user_id.id
+        if flow.description:
+            vals['description'] = '<p>%s</p>' % self._h(flow.description)
+        customer = flow.partner_id.name
+        assignee = flow.user_id.name
+        flow.unlink()
+        ticket = self.env['mini.helpdesk.ticket'].sudo().create(vals)
+        return '✅ <b>Ticket oluşturuldu</b>\n%s — %s\n🏢 %s · 👤 %s · 🎯 %s' % (
+            self._h(ticket.number),
+            self._h(ticket.name),
+            self._h(customer or '—'),
+            self._h(assignee or '—'),
+            '🟢 Düşük' if vals['priority'] == '0' else
+            '🔵 Normal' if vals['priority'] == '1' else
+            '🟠 Yüksek' if vals['priority'] == '2' else '🔴 Acil',
+        )
+
     def cmd_yardim(self):
         return (
             '🤖 <b>Komutlar</b>\n'
+            '/bilet [başlık] — adım adım ticket: başlık, müşteri, öncelik, atama, açıklama\n'
             '/siparis [müşteri] — son 5 onaylı sipariş\n'
             '/stok ürün adı — stok ve fiyat\n'
             '/musteri müşteri adı — müşteri arama\n'
             '/rapor [gün] — satış özeti (varsayılan 7)\n'
-            '/bilet başlık — helpdesk ticket oluştur'
+            'Akışı her zaman "iptal" ile bozabilirsin.'
         )
 
     def cmd_siparis(self, arg):
@@ -336,15 +509,6 @@ class TelegramBot(models.AbstractModel):
             ])
             lines.append('⏰ Yeni SLA ihlali: <b>%d</b>' % breached)
         return '\n'.join(lines)
-
-    def cmd_bilet(self, arg):
-        if 'mini.helpdesk.ticket' not in self.env:
-            return 'ℹ️ mini_helpdesk kurulu değil — ticket oluşturulamadı.'
-        ticket = self.env['mini.helpdesk.ticket'].sudo().create({'name': arg[:100]})
-        return '✅ <b>Ticket oluşturuldu</b>\n%s — %s' % (
-            self._h(ticket.number),
-            self._h(ticket.name),
-        )
 
     # ------------------------------------------------------------------
     # Polling: daemon long-poll thread + 1-min cron watchdog

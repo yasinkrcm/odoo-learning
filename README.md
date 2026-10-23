@@ -665,7 +665,7 @@ docker compose restart web
   - `/stok ürün adı` — `product.product` (display_name/default_code) ilk 5: stok + liste fiyatı
   - `/musteri müşteri adı` — `res.partner` ilk 5: e-posta + müşteri etiketi
   - `/rapor [gün=7]` — sipariş sayısı, toplam, en iyi 3 müşteri (`read_group`, sales_insights deseni); mini_helpdesk kuruluysa yeni SLA ihlali sayısı
-  - `/bilet başlık` — `mini.helpdesk.ticket` oluşturur (opsiyonel; mevcut modül kendi Telegram bildirimini tetikler)
+  - `/bilet [başlık]` — adım adım ticket sihirbazı: başlık (metin) → müşteri (metin arama + buton, geçilebilir) → öncelik (butonlar) → atanacak kişi (butonlar, geçilebilir) → açıklama (metin, geçilebilir); sonunda özet. `telegram.bot.flow` modeli adımı/veriyi chat başına tutar; "iptal" her an bozar, yeni `/` komutu akışı keser.
 - **Denetim:** her işlenen mesaj `telegram.bot.log`'a yazılır (chat_id, kullanıcı, komut, cevap); kök menüdeki list view + search ile erişilir.
 - **Gönderim:** `telegram.bot._send_to(chat_id, text)` herhangi bir chat'e HTML mesaj gönderir; token `telegram_notify.bot_token`'dan paylaşılır.
 
