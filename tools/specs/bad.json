@@ -1,0 +1,15 @@
+{
+  "module": "../evil",
+  "name": "Bad",
+  "models": [
+    {
+      "name": "bad.model",
+      "fields": [
+        {"name": "name", "type": "Char"},
+        {"name": "owner", "type": "Many2one"},
+        {"name": "level", "type": "Selection", "selection": [["a", "A"]], "default": "z"},
+        {"name": "x", "type": "Foo"}
+      ]
+    }
+  ]
+}

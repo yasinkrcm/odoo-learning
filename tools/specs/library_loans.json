@@ -1,0 +1,99 @@
+{
+    "module": "library_loans",
+    "name": "Library Loans",
+    "summary": "Track books and who borrowed them",
+    "depends": [
+        "base"
+    ],
+    "models": [
+        {
+            "name": "library.book",
+            "description": "Book",
+            "fields": [
+                {
+                    "name": "name",
+                    "type": "Char",
+                    "string": "Title",
+                    "required": true
+                },
+                {
+                    "name": "author",
+                    "type": "Char"
+                },
+                {
+                    "name": "isbn",
+                    "type": "Char",
+                    "string": "ISBN"
+                },
+                {
+                    "name": "available",
+                    "type": "Boolean",
+                    "default": true
+                }
+            ]
+        },
+        {
+            "name": "library.loan",
+            "description": "Loan",
+            "chatter": true,
+            "allow_delete": true,
+            "fields": [
+                {
+                    "name": "name",
+                    "type": "Char",
+                    "string": "Reference",
+                    "required": true
+                },
+                {
+                    "name": "book_id",
+                    "type": "Many2one",
+                    "comodel": "library.book",
+                    "string": "Book",
+                    "required": true
+                },
+                {
+                    "name": "member_id",
+                    "type": "Many2one",
+                    "comodel": "res.partner",
+                    "string": "Member"
+                },
+                {
+                    "name": "loan_date",
+                    "type": "Date"
+                },
+                {
+                    "name": "due_date",
+                    "type": "Date"
+                },
+                {
+                    "name": "state",
+                    "type": "Selection",
+                    "selection": [
+                        [
+                            "draft",
+                            "Draft"
+                        ],
+                        [
+                            "lent",
+                            "Lent"
+                        ],
+                        [
+                            "returned",
+                            "Returned"
+                        ]
+                    ],
+                    "default": "draft"
+                },
+                {
+                    "name": "fee",
+                    "type": "Float",
+                    "string": "Late Fee"
+                },
+                {
+                    "name": "note",
+                    "type": "Text"
+                }
+            ]
+        }
+    ]
+}

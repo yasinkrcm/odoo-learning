@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_library_loans_root" name="Library Loans" sequence="90"/>
+    <menuitem id="menu_library_book" name="Book" parent="menu_library_loans_root" action="action_library_book"/>
+    <menuitem id="menu_library_loan" name="Loan" parent="menu_library_loans_root" action="action_library_loan"/>
+</odoo>

@@ -24,3 +24,6 @@ ENV/
 # Production secrets (deploy)
 deploy/.env
 deploy/backups/
+
+# Odoo persistent data (docker bind mounts)
+data/
