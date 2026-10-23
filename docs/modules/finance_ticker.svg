@@ -24,7 +24,7 @@
     <circle cx="476" cy="95" r="3" fill="#4f46e5"/><text x="488" y="99">/finance_ticker/data (jsonrpc, auth=user) · 60 sn cache</text>
     <circle cx="476" cy="119" r="3" fill="#4f46e5"/><text x="488" y="123">Ücretsiz kaynaklar: open.er-api.com + gold-api.com (ons XAU)</text>
     <circle cx="476" cy="143" r="3" fill="#4f46e5"/><text x="488" y="147">Gram hesapları: 22 ayar · çeyrek · yarım · tam · cumhuriyet</text>
-    <circle cx="476" cy="167" r="3" fill="#4f46e5"/><text x="488" y="171">Günün açılışına göre % değişim + 24 noktalı sparkline</text>
+    <circle cx="476" cy="167" r="3" fill="#4f46e5"/><text x="488" y="171">% değişim + sparkline aynı gün-içi pencereden · state diske yazılır</text>
     <circle cx="476" cy="191" r="3" fill="#4f46e5"/><text x="488" y="195">Owl NavBar patch: koyu lacivert navbar + canlı kartlar</text>
   </g>
 </svg>

@@ -52,6 +52,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
   <img src="docs/modules/sales_insights.svg" alt="sales_insights mimari diyagramı" width="100%"/>
   <img src="docs/dashboard.svg" alt="Sales Pulse Dashboard mimari diyagramı" width="100%"/>
   <img src="docs/modules/finance_ticker.svg" alt="finance_ticker mimari diyagramı" width="100%"/>
+  <img src="docs/modules/library_loans.svg" alt="library_loans mimari diyagramı" width="100%"/>
 </div>
 
 ---
@@ -92,7 +93,8 @@ odoo-project/
 │       ├── buksu_stok_saha.svg
 │       ├── mini_helpdesk.svg
 │       ├── sales_insights.svg
-│       └── finance_ticker.svg
+│       ├── finance_ticker.svg
+│       └── library_loans.svg
 └── addons/
     ├── my_first_module/            # Foundation module: ORM, wizards, actions & webhook
     │   ├── __init__.py
@@ -606,6 +608,10 @@ Backend'e giriş yaptığında navbar'ın altında şerit görünür — sekme a
 ---
 
 ### 10. `library_loans` (Library Books & Loans)
+
+<div align="center">
+  <img src="docs/modules/library_loans.svg" alt="library_loans modül kartı" width="100%"/>
+</div>
 
 The learning-module equivalent of a full app in miniature — models, views, security and chatter without any external API surface.
 
