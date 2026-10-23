@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_telegram_bot_log_user,telegram.bot.log.user,model_telegram_bot_log,base.group_user,1,0,0,0
+access_telegram_bot_log_manager,telegram.bot.log.manager,model_telegram_bot_log,base.group_system,1,1,1,1
