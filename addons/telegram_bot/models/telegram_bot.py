@@ -61,7 +61,7 @@ class TelegramBot(models.AbstractModel):
     def _icp(self):
         return self.env['ir.config_parameter'].sudo()
 
-    def _api(self, method, payload=None):
+    def _api(self, method, payload=None, timeout=10):
         token = self._icp().get_param('telegram_notify.bot_token')
         if not token:
             _logger.warning('Telegram is not configured (bot_token missing)')
@@ -70,7 +70,7 @@ class TelegramBot(models.AbstractModel):
             resp = requests.post(
                 API_URL % (token, method),
                 json=payload or {},
-                timeout=10,
+                timeout=timeout,
             )
             resp.raise_for_status()
             return resp.json()
@@ -155,7 +155,7 @@ class TelegramBot(models.AbstractModel):
         else:
             parts = text.split(' ', 1)
             arg = parts[1].strip() if len(parts) > 1 else ''
-            reply = self._dispatch(parts[0].lower().strip('@/'), arg)
+            reply = self._dispatch(self._clean_command(parts[0]), arg)
 
         self.env['telegram.bot.log'].sudo().create({
             'chat_id': str(chat_id),
@@ -179,7 +179,7 @@ class TelegramBot(models.AbstractModel):
         elif data.startswith('cmd:'):
             parts = data[4:].strip().split(' ', 1)
             arg = parts[1].strip() if len(parts) > 1 else ''
-            reply = self._dispatch(parts[0].lower(), arg)
+            reply = self._dispatch(self._clean_command(parts[0]), arg)
         else:
             reply = self.cmd_yardim()
 
@@ -196,6 +196,18 @@ class TelegramBot(models.AbstractModel):
             '⛔ Bu bot sadece kayıtlı kullanıcılara açıktır.\n'
             'Telegram id: <code>%s</code>' % self._h(sender.get('id'))
         )
+
+    def _clean_command(self, raw):
+        """'/bilet@BotAdi' formunu da ele alan güvenli normalize.
+
+        strip karakter-kümesi '/'ü de kestiği için slah korunuyor.
+        """
+        command = (raw or '').strip().lower()
+        if '@' in command:
+            command = command.split('@', 1)[0]
+        if not command.startswith('/'):
+            command = '/' + command
+        return command
 
     def _dispatch(self, command, arg):
         handler = {
@@ -374,7 +386,7 @@ class TelegramBot(models.AbstractModel):
             'timeout': 50,
             'limit': 20,
             'allowed_updates': ['message', 'callback_query'],
-        })
+        }, timeout=60)  # sunucu 50sn bekliyor — client daha uzun dayansın
         updates = (resp or {}).get('result') or []
         for update in updates:
             try:
