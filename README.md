@@ -8,12 +8,12 @@
     <img src="https://img.shields.io/github/license/yasinkrcm/odoo-learning?style=for-the-badge" alt="License"/>
     <img src="https://img.shields.io/github/last-commit/yasinkrcm/odoo-learning/main?logo=git&logoColor=white&style=for-the-badge" alt="Last commit"/>
   </p>
-  <p><em>Containerized Odoo 19 development showcase — 9 custom modules, a vanilla-JS dashboard, XML-RPC clients, JSON-RPC webhooks, real-world business flows.</em></p>
+  <p><em>Containerized Odoo 19 development showcase — 10 custom modules, a vanilla-JS dashboard, XML-RPC clients, JSON-RPC webhooks, real-world business flows.</em></p>
 </div>
 
 # Odoo 19 Custom Addons & Architecture: Modules, ORM, Security, POS Sync, Progress Billing & RPC
 
-A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, nine custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, a helpdesk with SLA tracking, sales analytics, a live finance ticker, sales customization, library loans, and full-stack ORM patterns), a standalone vanilla-JS dashboard, external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
+A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, ten custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, a two-way Telegram bot, a helpdesk with SLA tracking, sales analytics, a live finance ticker, sales customization, library loans, and full-stack ORM patterns), a standalone vanilla-JS dashboard, external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
 
 <div align="center">
   <img src="docs/architecture.svg" alt="Sistem Mimarisi" width="100%"/>
@@ -38,6 +38,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
 | **`dashboard/`** | Frontend / UI | Standalone vanilla JS analytics dashboard (no framework, no build step) over the `sales_insights` KPI API: KPI cards with trend badge, animated daily bar chart with tooltips, top customer/product bar lists, 7/30/90-day range switcher, 60s auto-refresh, live status dot, settings dialog persisting URL/API key in localStorage. Deployment: any static host (GitHub Pages, nginx location, local `python3 -m http.server`) — CORS `*` lets it talk to any Odoo exposing the KPI API. | `GET /sales_insights/kpi` |
 | **`finance_ticker`** | UI / Utilities | Live currency & gold ticker embedded under the backend navbar. OWL component patches `web.NavBar`; JSON-RPC controller `/finance_ticker/data` (auth=user, 60s in-process cache) pulls USD/EUR from `open.er-api.com` and the XAU ounce from `gold-api.com` (both keyless), computes gram-gold items (22k, çeyrek, yarım, tam, cumhuriyet) by purity, tracks daily changes in a day-long history aligned with the % change, and persists the day's state to `/var/lib/odoo/finance_ticker_state.json` (host `./data/odoo/`) so trends survive restarts. Assets: `ticker.js` + `ticker.xml` + `ticker.scss` (dark navy navbar, green/red trend cards). | `web` |
+| **`telegram_bot`** | Integration / Chat | Two-way Telegram bridge. Updates arrive via webhook (`X-Telegram-Bot-Api-Secret-Token` constant-time verified, 403 on mismatch) or a 1-minute `getUpdates` polling cron (auto-skipped while webhook is registered). Dispatches white-listed Telegram user IDs (ICP `telegram_bot.allowed_telegram_ids`): `/siparis` last 5 confirmed orders (optional customer filter), `/stok` product stock & price, `/musteri` partner search, `/rapor [days]` sales summary via `read_group` (top customers + open SLA breaches), `/bilet <title>` creates a `mini_helpdesk.ticket` when installed, `/yardim` help. Replies are Telegram-HTML with `html_escape`; every interaction is audited in `telegram.bot.log` (list view + search). Reuses `telegram_notify.bot_token`; `telegram.bot._send_to` sends to any chat. | `base`, `mail`, `telegram_notify`, `sale` |
 | **`library_loans`** | Core / Workflow | Library app basics: `library.book` (title, author, ISBN, availability) and `library.loan` with `mail.thread` chatter + field tracking on every field, `draft → lent → returned` state flow, member binding to `res.partner`, due dates and late fees; classic list/form views with a root app menu (chatter/book lifecycle in one mini-module). | `base`, `mail` |
 | **`tools/odoo_scaffold.py`** | Dev Tooling | Module skeleton generator driven by JSON specs (`tools/specs/`), also used as a spec-validation exercise (`bad.json` proof-of-failure case). | `python3` |
 
@@ -53,6 +54,7 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
   <img src="docs/dashboard.svg" alt="Sales Pulse Dashboard mimari diyagramı" width="100%"/>
   <img src="docs/modules/finance_ticker.svg" alt="finance_ticker mimari diyagramı" width="100%"/>
   <img src="docs/modules/library_loans.svg" alt="library_loans mimari diyagramı" width="100%"/>
+  <img src="docs/modules/telegram_bot.svg" alt="telegram_bot mimari diyagramı" width="100%"/>
 </div>
 
 ---
@@ -94,7 +96,8 @@ odoo-project/
 │       ├── mini_helpdesk.svg
 │       ├── sales_insights.svg
 │       ├── finance_ticker.svg
-│       └── library_loans.svg
+│       ├── library_loans.svg
+│       └── telegram_bot.svg
 └── addons/
     ├── my_first_module/            # Foundation module: ORM, wizards, actions & webhook
     │   ├── __init__.py
@@ -220,6 +223,18 @@ odoo-project/
     │   └── security/
     │       └── ir.model.access.csv
     │
+    ├── telegram_bot/                # Two-way Telegram bot (queries, tickets, KPI)
+    │   ├── __init__.py
+    │   ├── __manifest__.py          # depends: telegram_notify, sale
+    │   ├── controllers/webhook.py   # POST /telegram_bot/webhook (secret header)
+    │   ├── models/
+    │   │   ├── telegram_bot.py      # telegram.bot abstract: dispatch + polling + webhook API
+    │   │   └── telegram_bot_log.py  # telegram.bot.log audit trail
+    │   ├── data/cron.xml            # Telegram Bot: Poll Updates (1 min)
+    │   ├── views/telegram_bot_log_views.xml
+    │   └── security/
+    │       └── ir.model.access.csv
+    │
     └── buksu_stok_saha/            # Field Material & Stock Management (Saha Stok)
         ├── __init__.py
         ├── __manifest__.py
@@ -282,6 +297,7 @@ Create a database (e.g. `odoo19_dev`). Keep the database name, admin email, and 
    - **Telegram Notify** (`telegram_notify` - requires `sale` and `account`; see its setup section below)
    - **Mini Helpdesk** (`mini_helpdesk` - requires `mail` and `telegram_notify`)
    - **Library Loans** (`library_loans` - requires `mail`)
+   - **Telegram Bot** (`telegram_bot` - requires `telegram_notify` and `sale`; see its setup section below)
 
 ---
 
@@ -626,6 +642,43 @@ The learning-module equivalent of a full app in miniature — models, views, sec
 docker compose exec web odoo -d <your_db> -i library_loans \
   --db_host=db --db_user=odoo --db_password=odoo --stop-after-init
 docker compose restart web
+```
+
+---
+
+### 11. `telegram_bot` (Çift Yönlü Telegram Botu)
+
+<div align="center">
+  <img src="docs/modules/telegram_bot.svg" alt="telegram_bot modül kartı" width="100%"/>
+</div>
+
+`telegram_notify` odoo → Telegram bildirimi yapar; bu modül geri yönü ekler: **izinli Telegram kullanıcısı Odoo'yu sorgular.**
+
+- **Kabul kanalları (birini aktif kullan):**
+  - **Polling (varsayılan, lokal dahil):** *Telegram Bot: Poll Updates* her dakika `getUpdates` çeker (`timeout=3`, diğer cronları bloklamaz); webhook aktifken cron kendini devre dışı bırakır (`telegram_bot.webhook_url` ICP'si doluysa no-op).
+  - **Webhook (VPS):** `POST /telegram_bot/webhook` (`auth=public`); `X-Telegram-Bot-Api-Secret-Token` header'ı `telegram_bot.webhook_secret` ICP'siyle `hmac.compare_digest` doğrulanır (nisa_pos_sync deseni). Kayıt: `bot._register_webhook('https://example.com', <secret>)` (odoo shell) veya `setWebhook` curl.
+- **Yetki:** Telegram **user id** beyaz listesi (`telegram_bot.allowed_telegram_ids`, virgülle ayrılmış). Kayıt dışı kullanıcı tek seferlik ret cevabı alır; telegram id'si cevapta görünür (getUpdates'ten öğrenilir).
+- **Komutlar (HTML cevap, `html_escape` korumalı):**
+  - `/yardim` — komut listesi ( `/start`, `/help` alias)
+  - `/siparis [müşteri]` — son 5 onaylı `sale.order` (referans, müşteri, tutar, tarih)
+  - `/stok ürün adı` — `product.product` (display_name/default_code) ilk 5: stok + liste fiyatı
+  - `/musteri müşteri adı` — `res.partner` ilk 5: e-posta + müşteri etiketi
+  - `/rapor [gün=7]` — sipariş sayısı, toplam, en iyi 3 müşteri (`read_group`, sales_insights deseni); mini_helpdesk kuruluysa yeni SLA ihlali sayısı
+  - `/bilet başlık` — `mini.helpdesk.ticket` oluşturur (opsiyonel; mevcut modül kendi Telegram bildirimini tetikler)
+- **Denetim:** her işlenen mesaj `telegram.bot.log`'a yazılır (chat_id, kullanıcı, komut, cevap); kök menüdeki list view + search ile erişilir.
+- **Gönderim:** `telegram.bot._send_to(chat_id, text)` herhangi bir chat'e HTML mesaj gönderir; token `telegram_notify.bot_token`'dan paylaşılır.
+
+**Setup (lokal, polling):**
+
+1. Bot token zaten `telegram_notify.bot_token` olarak ayarlı.
+2. *Settings → Technical → System Parameters*'da `telegram_bot.allowed_telegram_ids = <telegram user id>` gir.
+3. *Scheduled Actions → Telegram Bot: Poll Updates → Run Manually* (veya 1 dakika bekle) — Telegram'ından `/yardim` gönder, cevap gelir.
+
+**Setup (VPS, webhook):**
+
+```bash
+odoo shell: env['telegram.bot']._register_webhook('https://example.com', '<gizli>')
+# veya curl ile: curl https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://example.com/telegram_bot/webhook&secret_token=...
 ```
 
 ---
