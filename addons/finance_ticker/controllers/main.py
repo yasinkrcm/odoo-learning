@@ -1,4 +1,7 @@
+import json
 import logging
+import os
+import tempfile
 import time
 from datetime import date
 
@@ -10,6 +13,12 @@ _logger = logging.getLogger(__name__)
 
 CACHE_TTL = 60  # saniye
 OUNCE_GRAMS = 31.1035
+
+# Geçmiş /var/lib/odoo (host'ta ./data/odoo) bind mount'ına yazılır;
+# böylece konteyner/docker restart'ta Gün içi trend kaybolmaz.
+STATE_FILE = os.path.join(
+    os.environ.get("ODOO_DATA_DIR", "/var/lib/odoo"), "finance_ticker_state.json"
+)
 
 # Gram has altına göre hesaplanan ürünler (22 ayar = 0.916 saflık)
 GOLD_ITEMS = [
@@ -39,6 +48,30 @@ def _fetch_raw():
     gold.raise_for_status()
     ons = float(gold.json()["price"])
     return usd_try, eur_try, ons
+
+
+def _load_state():
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return
+    if data.get("day") == date.today().isoformat():
+        _state["day"] = data["day"]
+        _state["history"] = data.get("history", {})
+
+
+def _save_state():
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", dir=os.path.dirname(STATE_FILE), delete=False
+        ) as f:
+            json.dump(
+                {"day": _state["day"], "history": _state["history"]}, f
+            )
+        os.replace(f.name, STATE_FILE)
+    except Exception:
+        _logger.debug("Ticker state kaydedilemedi", exc_info=True)
 
 
 def _track(key, value):
@@ -82,7 +115,12 @@ def _build_payload():
     add("ons", "Ons Altın", ons, "$")
     for key, label, factor in GOLD_ITEMS:
         add(key, label, gram_has * factor, "₺")
+
+    _save_state()
     return items
+
+
+_load_state()
 
 
 class FinanceTickerController(http.Controller):
