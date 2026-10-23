@@ -8,12 +8,12 @@
     <img src="https://img.shields.io/github/license/yasinkrcm/odoo-learning?style=for-the-badge" alt="License"/>
     <img src="https://img.shields.io/github/last-commit/yasinkrcm/odoo-learning/main?logo=git&logoColor=white&style=for-the-badge" alt="Last commit"/>
   </p>
-  <p><em>Containerized Odoo 19 development showcase — 8 custom modules, a vanilla-JS dashboard, XML-RPC clients, JSON-RPC webhooks, real-world business flows.</em></p>
+  <p><em>Containerized Odoo 19 development showcase — 9 custom modules, a vanilla-JS dashboard, XML-RPC clients, JSON-RPC webhooks, real-world business flows.</em></p>
 </div>
 
 # Odoo 19 Custom Addons & Architecture: Modules, ORM, Security, POS Sync, Progress Billing & RPC
 
-A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, eight custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, a helpdesk with SLA tracking, sales analytics, a live finance ticker, sales customization, and full-stack ORM patterns), a standalone vanilla-JS dashboard, external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
+A production-ready, hands-on repository showcasing modern **Odoo 19 Community** development end-to-end. It features containerized Odoo 19 + PostgreSQL, nine custom modules covering real-world business flows (construction progress billing, retail POS stock sync, field stock management, Telegram notifications, a helpdesk with SLA tracking, sales analytics, a live finance ticker, sales customization, library loans, and full-stack ORM patterns), a standalone vanilla-JS dashboard, external Python XML-RPC clients (CRUD, CSV import, external API product sync), and JSON-RPC webhooks.
 
 <div align="center">
   <img src="docs/architecture.svg" alt="Sistem Mimarisi" width="100%"/>
@@ -37,7 +37,9 @@ A production-ready, hands-on repository showcasing modern **Odoo 19 Community** 
 | **`import_customers.py`** | ETL / Migration | Idempotent CSV import script using XML-RPC (search-before-write, upsert pattern preventing duplicate customer entries). | `csv`, `python-dotenv` |
 | **`sync_products.py`** | Integration / ETL | Idempotent external API → Odoo product synchronization over XML-RPC. Matches records by `default_code` (`EXT-<id>`), creates missing products, writes only changed fields, keeps going on per-record failures, and logs a run summary to console and `sync.log`. | `requests`, `python-dotenv` |
 | **`dashboard/`** | Frontend / UI | Standalone vanilla JS analytics dashboard (no framework, no build step) over the `sales_insights` KPI API: KPI cards with trend badge, animated daily bar chart with tooltips, top customer/product bar lists, 7/30/90-day range switcher, 60s auto-refresh, live status dot, settings dialog persisting URL/API key in localStorage. Deployment: any static host (GitHub Pages, nginx location, local `python3 -m http.server`) — CORS `*` lets it talk to any Odoo exposing the KPI API. | `GET /sales_insights/kpi` |
-| **`finance_ticker`** | UI / Utilities | Live currency & gold ticker embedded under the backend navbar. OWL component patches `web.NavBar`; JSON-RPC controller `/finance_ticker/data` (auth=user, 60s in-process cache) pulls USD/EUR from `open.er-api.com` and the XAU ounce from `gold-api.com` (both keyless), computes gram-gold items (22k, çeyrek, yarım, tam, cumhuriyet) by purity, tracks daily open prices for % change and a 24-point sparkline history. Assets: `ticker.js` + `ticker.xml` + `ticker.scss` (dark navy navbar, green/red trend cards). | `web` |
+| **`finance_ticker`** | UI / Utilities | Live currency & gold ticker embedded under the backend navbar. OWL component patches `web.NavBar`; JSON-RPC controller `/finance_ticker/data` (auth=user, 60s in-process cache) pulls USD/EUR from `open.er-api.com` and the XAU ounce from `gold-api.com` (both keyless), computes gram-gold items (22k, çeyrek, yarım, tam, cumhuriyet) by purity, tracks daily changes in a day-long history aligned with the % change, and persists the day's state to `/var/lib/odoo/finance_ticker_state.json` (host `./data/odoo/`) so trends survive restarts. Assets: `ticker.js` + `ticker.xml` + `ticker.scss` (dark navy navbar, green/red trend cards). | `web` |
+| **`library_loans`** | Core / Workflow | Library app basics: `library.book` (title, author, ISBN, availability) and `library.loan` with `mail.thread` chatter + field tracking on every field, `draft → lent → returned` state flow, member binding to `res.partner`, due dates and late fees; classic list/form views with a root app menu (chatter/book lifecycle in one mini-module). | `base`, `mail` |
+| **`tools/odoo_scaffold.py`** | Dev Tooling | Module skeleton generator driven by JSON specs (`tools/specs/`), also used as a spec-validation exercise (`bad.json` proof-of-failure case). | `python3` |
 
 <div align="center">
   <img src="docs/modules/buksu_hakedis.svg" alt="buksu_hakedis mimari diyagramı" width="100%"/>
@@ -66,6 +68,12 @@ odoo-project/
 ├── import_customers.py             # Idempotent CSV customer importer
 ├── sync_products.py                # Idempotent external API → Odoo product sync
 ├── customers.csv                   # Sample dataset for bulk import
+├── tools/                          # Dev tooling
+│   ├── odoo_scaffold.py            # Module skeleton generator from JSON specs
+│   └── specs/                      # Spec files driving the generator
+├── data/                           # Persistent container state (git-ignored)
+│   ├── odoo/                       # Odoo filestore/sessions (+ finance_ticker state)
+│   └── db/                         # PostgreSQL data (bind-mounted from docker-compose)
 ├── dashboard/                      # Standalone vanilla JS analytics UI
 │   ├── index.html                  # Skeleton: KPI cards + chart + lists
 │   ├── app.js                      # fetch/render logic (localStorage settings)
@@ -193,8 +201,22 @@ odoo-project/
     ├── finance_ticker/              # Live currency & gold ticker under the navbar
     │   ├── __init__.py
     │   ├── __manifest__.py          # assets: ticker.js / ticker.xml / ticker.scss
-    │   ├── controllers/main.py      # /finance_ticker/data (60s cache, keyless APIs)
+    │   ├── controllers/main.py      # /finance_ticker/data (60s cache, keyless APIs, disk-persistent state)
     │   └── static/src/              # OWL component patching web.NavBar
+    │
+    ├── library_loans/               # Library books & loans with chatter
+    │   ├── __init__.py
+    │   ├── __manifest__.py          # application: True, depends: base + mail
+    │   ├── models/
+    │   │   ├── __init__.py
+    │   │   ├── library_book.py      # library.book (title, author, ISBN, availability)
+    │   │   └── library_loan.py      # library.loan (mail.thread + tracked fields)
+    │   ├── views/
+    │   │   ├── library_book_views.xml
+    │   │   ├── library_loan_views.xml
+    │   │   └── menus.xml            # Root "Library" app menu
+    │   └── security/
+    │       └── ir.model.access.csv
     │
     └── buksu_stok_saha/            # Field Material & Stock Management (Saha Stok)
         ├── __init__.py
@@ -239,6 +261,8 @@ Create a database (e.g. `odoo19_dev`). Keep the database name, admin email, and 
 
 > **Note:** The database credentials in `docker-compose.yml` (`odoo` / `odoo`) are local development defaults. Do not use them in production environments.
 
+> **Data persistence:** the stack binds `./data/db` (PostgreSQL data) and `./data/odoo` (Odoo filestore/sessions) instead of named volumes — restarts, recreates and up/down cycles keep all data on disk under `./data/`. Both are git-ignored.
+
 ### 2. Install Dependencies & Custom Modules
 
 1. Log into Odoo and activate **Developer Mode** (*Settings* → scroll down → *Activate the developer mode*).
@@ -255,6 +279,7 @@ Create a database (e.g. `odoo19_dev`). Keep the database name, admin email, and 
    - **Buksu Saha Stok Yönetimi** (`buksu_stok_saha` - requires Inventory `stock` and Project `project`)
    - **Telegram Notify** (`telegram_notify` - requires `sale` and `account`; see its setup section below)
    - **Mini Helpdesk** (`mini_helpdesk` - requires `mail` and `telegram_notify`)
+   - **Library Loans** (`library_loans` - requires `mail`)
 
 ---
 
@@ -562,7 +587,8 @@ Turns the Odoo backend into a mini **Bloomberg-style terminal**: a live currency
   - **Keyless free sources:** USD rates from `open.er-api.com/v6/latest/USD` and the XAU gold ounce from `api.gold-api.com/price/XAU` (8s timeouts each).
   - **60-second in-process cache** (`_state`) so concurrent tabs don't hammer the upstream APIs; on failure the last payload is served and after a fresh-boot failure `{'items': [], 'error': True}` is returned gracefully.
   - **Turkish gold prices computed from the ounce:** gram has altın × purity/karşılık factors → 22 ayar (0.916), çeyrek (1.754 g), yarım (3.508 g), tam (7.016 g), cumhuriyet (7.216 g).
-  - **Daily change tracking:** the first fetched value of each day is the baseline (`_state.open`), `change` is computed against it; each item also carries a sparkline `history` (last 24 points).
+  - **Daily change tracking, one shared window:** each item accumulates a day-long `history` (capped at ~800 points). The day's first value is the baseline; both the `% change` and the sparkline are computed from the same window, so the drawn slope always matches the displayed percentage. On a day rollover the history resets.
+  - **Restart-proof state:** after every refresh the day's history is atomically written (temp file + `os.replace`) to `finance_ticker_state.json` inside `/var/lib/odoo` (host `./data/odoo/`), and reloaded at module import — a docker restart no longer wipes trends/% baselines mid-day.
 - **Frontend (OWL, `web.assets_backend`):**
   - `FinanceTicker` OWL component fetches `/finance_ticker/data` via `rpc`, re-renders every 60 s.
   - Patches `web.NavBar` (template inheritance) to inject the strip below the apps menu; `ticker.scss` restyles the whole navbar dark navy (`#1c2045`) with search field styling.
@@ -576,6 +602,25 @@ docker compose restart web
 ```
 
 Backend'e giriş yaptığında navbar'ın altında şerit görünür — sekme açık kaldığı sürece her 60 saniyede fiyatlar tazelenir.
+
+---
+
+### 10. `library_loans` (Library Books & Loans)
+
+The learning-module equivalent of a full app in miniature — models, views, security and chatter without any external API surface.
+
+- **`library.book`:** title, author, ISBN and an `available` boolean — the simple side of the pair.
+- **`library.loan`:** *everything* wrapped in `mail.thread` + `mail.activity.mixin`. Every tracked field (`name`, `book_id`, `member_id`, loan/due dates, state, fee) logs its own change on the chatter — a working display of how little code `tracking=True` replaces.
+- **State flow:** `draft → lent → returned` selection field, with the book binding and member to `res.partner`.
+- **Views & menu:** classic list/form views for both models under a root "Library" application menu; ACL CSV covers both models.
+
+**Install:**
+
+```bash
+docker compose exec web odoo -d <your_db> -i library_loans \
+  --db_host=db --db_user=odoo --db_password=odoo --stop-after-init
+docker compose restart web
+```
 
 ---
 
