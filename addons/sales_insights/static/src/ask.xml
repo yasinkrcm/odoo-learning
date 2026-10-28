@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="sales_insights.SalesInsightsAsk">
+        <div class="o_si_ask">
+            <input class="o_si_ask_input" placeholder="Sor: geçen ay ciro"
+                   t-model="state.q" t-on-keyup="onKeyup"/>
+            <button class="o_si_ask_btn" t-on-click="ask">Sor</button>
+            <span class="o_si_ask_answer" t-if="state.answer" t-esc="state.answer"/>
+        </div>
+    </t>
+
+    <t t-inherit="web.NavBar" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_menu_systray')]" position="before">
+            <SalesInsightsAsk/>
+        </xpath>
+    </t>
+
+</templates>

@@ -120,6 +120,20 @@ def _build_payload():
     return items
 
 
+def _cached_payload():
+    """60 sn TTL ile payload döndürür; hata durumunda (last_items, error)."""
+    now = time.time()
+    if _state["payload"] is None or now - _state["ts"] > CACHE_TTL:
+        try:
+            _state["payload"] = _build_payload()
+            _state["ts"] = now
+        except Exception:
+            _logger.exception("Finance ticker verisi alınamadı")
+            if _state["payload"] is None:
+                return [], True
+    return _state["payload"], False
+
+
 _load_state()
 
 
@@ -127,13 +141,5 @@ class FinanceTickerController(http.Controller):
 
     @http.route("/finance_ticker/data", type="jsonrpc", auth="user")
     def data(self):
-        now = time.time()
-        if _state["payload"] is None or now - _state["ts"] > CACHE_TTL:
-            try:
-                _state["payload"] = _build_payload()
-                _state["ts"] = now
-            except Exception:
-                _logger.exception("Finance ticker verisi alınamadı")
-                if _state["payload"] is None:
-                    return {"items": [], "error": True}
-        return {"items": _state["payload"], "error": False}
+        items, error = _cached_payload()
+        return {"items": items, "error": error}

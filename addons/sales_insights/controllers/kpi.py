@@ -2,6 +2,7 @@ import hmac
 from datetime import timedelta
 
 from odoo import fields, http
+from odoo.addons.finance_ticker.controllers.main import _cached_payload
 from odoo.http import request
 
 
@@ -13,6 +14,33 @@ class SalesInsightsKpi(http.Controller):
         if not secret or not provided:
             return False
         return hmac.compare_digest(provided, secret)
+
+    def _ar_aging(self):
+        lines = request.env['account.move.line'].sudo().search([
+            ('parent_state', '=', 'posted'),
+            ('account_id.account_type', '=', 'asset_receivable'),
+            ('reconciled', '=', False),
+        ])
+        today = fields.Date.today()
+        buckets = {'0_30': 0.0, '31_60': 0.0, '61_90': 0.0, '90_plus': 0.0}
+        for line in lines:
+            due = line.date_maturity
+            if not due:
+                continue
+            days = (today - due).days
+            val = line.amount_residual or 0.0
+            if days <= 30:
+                buckets['0_30'] += val
+            elif days <= 60:
+                buckets['31_60'] += val
+            elif days <= 90:
+                buckets['61_90'] += val
+            else:
+                buckets['90_plus'] += val
+        buckets['overdue_total'] = sum(buckets.values())
+        buckets['overdue_count'] = len(lines.filtered(
+            lambda l: l.date_maturity and (today - l.date_maturity).days > 0))
+        return buckets
 
     @http.route('/sales_insights/kpi', type='http', auth='public',
                 methods=['GET', 'POST'], csrf=False, cors='*')
@@ -61,10 +89,23 @@ class SalesInsightsKpi(http.Controller):
         top_products = top_products[:5]
 
         breached = 0
+        open_tickets = 0
         if 'mini.helpdesk.ticket' in request.env:
-            breached = request.env['mini.helpdesk.ticket'].sudo().search_count([
+            Helpdesk = request.env['mini.helpdesk.ticket'].sudo()
+            open_tickets = Helpdesk.search_count([('stage_id.is_closed', '=', False)])
+            breached = Helpdesk.search_count([
                 ('sla_deadline', '<', fields.Datetime.now()),
                 ('stage_id.is_closed', '=', False)])
+
+        threshold = int(request.env['ir.config_parameter'].sudo().get_param(
+            'sales_insights.stock_threshold') or 10)
+        stock_alerts = request.env['product.product'].sudo().search_count([
+            ('is_storable', '=', True),
+            ('free_qty', '<', threshold),
+        ])
+
+        ar_aging = self._ar_aging()
+        currency_ticker, _ticker_error = _cached_payload()
 
         company = request.env.company
         return request.make_json_response({
@@ -82,6 +123,26 @@ class SalesInsightsKpi(http.Controller):
             'daily': daily,
             'top_customers': top_customers,
             'top_products': top_products,
-            'helpdesk': {'sla_breached': breached},
+            'helpdesk': {'sla_breached': breached, 'open_tickets': open_tickets},
+            'inventory': {'stock_alerts': stock_alerts, 'threshold': threshold},
+            'ar_aging': ar_aging,
+            'currency_ticker': currency_ticker,
         })
 
+    @http.route('/sales_insights/ask', type='http', auth='public',
+                methods=['GET', 'POST'], csrf=False, cors='*')
+    def ask(self, **kw):
+        if not self._check_key(kw.get('api_key')):
+            return request.make_json_response({'error': 'invalid api_key'}, status=403)
+        text = (kw.get('q') or kw.get('query') or '').strip()
+        if not text:
+            return request.make_json_response({'answer': 'Soru gir.'})
+        answer = request.env['sales.insights.nl'].sudo().query(text)
+        return request.make_json_response(answer)
+
+    @http.route('/sales_insights/ask_user', type='jsonrpc', auth='user')
+    def ask_user(self, q=None):
+        text = (q or '').strip()
+        if not text:
+            return {'answer': 'Soru gir.'}
+        return request.env['sales.insights.nl'].sudo().query(text)
