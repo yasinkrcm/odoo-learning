@@ -13,6 +13,7 @@ class TelegramBotFlow(models.Model):
         ('priority', 'Priority'),
         ('assignee', 'Assignee'),
         ('description', 'Description'),
+        ('attachment', 'Attachment'),
     ], string='Step', required=True, default='title')
     title = fields.Char(string='Title')
     partner_id = fields.Many2one('res.partner', string='Customer')
@@ -21,4 +22,6 @@ class TelegramBotFlow(models.Model):
     ], string='Priority')
     user_id = fields.Many2one('res.users', string='Assigned To')
     description = fields.Text(string='Description')
+    attachment_name = fields.Char(string='Attachment Name')
+    attachment_data = fields.Binary(string='Attachment Data')
     create_uid = fields.Many2one('res.users', string='Telegram User', readonly=True)

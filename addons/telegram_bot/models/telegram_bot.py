@@ -1,3 +1,4 @@
+import base64
 import logging
 import threading
 import time
@@ -7,6 +8,7 @@ import requests
 
 import odoo
 from odoo import api, fields, models
+from odoo.addons.finance_ticker.controllers.main import _build_payload
 from odoo.exceptions import UserError
 from odoo.modules.registry import Registry
 from odoo.tools import html_escape
@@ -42,7 +44,9 @@ _POLL_THREAD = None  # proses başına tek long-poll thread
 # Telegram "//" menüsünde görünecek yardımcı komutlar (setMyCommands)
 BOT_COMMANDS = [
     ('bilet', 'Yeni helpdesk ticket (adım adım sorar)'),
-    ('siparis', 'Son 5 onaylı sipariş'),
+    ('kur', 'Dolar/Euro/Ons ve altın kurları'),
+    ('sor', 'Doğal dilde sor: geçen ay ciro'),
+    ('siparis', 'Son 5 sipariş/teklif (taslak onay butonu)'),
     ('stok', 'Ürün stok ve fiyat'),
     ('musteri', 'Müşteri arama'),
     ('rapor', 'Satış özeti, örn. /rapor 7'),
@@ -93,12 +97,28 @@ class TelegramBot(models.AbstractModel):
         resp = self._api('sendMessage', payload)
         return bool(resp and resp.get('ok'))
 
+    def _download_file(self, file_id):
+        """Telegram getFile ile raw byte indirir: (bytes, filename)."""
+        info = self._api('getFile', {'file_id': file_id})
+        file_path = (info or {}).get('result', {}).get('file_path')
+        if not file_path:
+            return b'', 'photo.jpg'
+        token = self._icp().get_param('telegram_notify.bot_token')
+        url = 'https://api.telegram.org/file/bot%s/%s' % (token, file_path)
+        resp = requests.get(url, timeout=30)
+        resp.raise_for_status()
+        return resp.content, file_path.rsplit('/', 1)[-1]
+
     def _cmd_keyboard(self):
         """Her cevabın altına eklenen tıklanabilir kısayol menüsü."""
         return {'inline_keyboard': [
             [
                 {'text': '🎫 Yeni bilet', 'callback_data': 'cmd:/bilet'},
                 {'text': '📈 Rapor (7 gün)', 'callback_data': 'cmd:/rapor 7'},
+            ],
+            [
+                {'text': '💱 Kurlar', 'callback_data': 'cmd:/kur'},
+                {'text': '🤖 Sor', 'callback_data': 'cmd:/sor'},
             ],
             [
                 {'text': '🧾 Son siparişler', 'callback_data': 'cmd:/siparis'},
@@ -134,6 +154,12 @@ class TelegramBot(models.AbstractModel):
         raw = self._icp().get_param('telegram_bot.allowed_telegram_ids') or ''
         return {int(x) for x in raw.replace(' ', '').split(',') if x.strip().isdigit()}
 
+    def _odoo_user_for(self, telegram_id):
+        if not telegram_id:
+            return self.env['res.users']
+        return self.env['res.users'].sudo().search(
+            [('telegram_user_id', '=', str(telegram_id))], limit=1)
+
     # ------------------------------------------------------------------
     # Update handling
     # ------------------------------------------------------------------
@@ -145,15 +171,23 @@ class TelegramBot(models.AbstractModel):
         message = update.get('message') or {}
         chat = message.get('chat') or {}
         sender = message.get('from') or {}
-        text = (message.get('text') or '').strip()
+        text = (message.get('text') or message.get('caption') or '').strip()
         chat_id = chat.get('id')
-        if not text or chat_id is None:
+        photo = message.get('photo')
+        document = message.get('document')
+        if chat_id is None or (not text and not photo and not document):
             return False
         username = sender.get('username') or sender.get('first_name') or ''
 
         self = self.with_context(tg_chat_id=str(chat_id))
-        if sender.get('id') not in self._allowed_ids():
+        mapped = self._odoo_user_for(sender.get('id'))
+        if mapped:
+            self = self.with_user(mapped).with_context(tg_chat_id=str(chat_id), tg_uid=mapped.id)
+
+        if sender.get('id') not in self._allowed_ids() and not mapped:
             reply = self._deny(sender)
+        elif photo or document:
+            reply = self._handle_media(chat_id, message)
         else:
             parts = text.split(' ', 1)
             arg = parts[1].strip() if len(parts) > 1 else ''
@@ -174,8 +208,27 @@ class TelegramBot(models.AbstractModel):
         })
         return self._send_to(chat_id, text_out, reply_markup=markup)
 
+    def _handle_media(self, chat_id, message):
+        """Fotoğraf/dosyayı aktif bilet akışının attachment adımına bağlar."""
+        flow = self._get_flow(chat_id)
+        if not flow or flow.step != 'attachment':
+            return 'ℹ️ Fotoğraf yalnızca aktif bilet akışının ek adımında eklenir.'
+        photo = message.get('photo') or []
+        file_id = (photo[-1] if photo else {}).get('file_id') or \
+            (message.get('document') or {}).get('file_id')
+        if not file_id:
+            return '❌ Dosya alınamadı.'
+        try:
+            raw, filename = self._download_file(file_id)
+        except Exception as e:
+            _logger.error('Telegram file download failed: %s', type(e).__name__)
+            return '❌ Dosya indirilemedi, tekrar dene.'
+        flow.attachment_data = base64.b64encode(raw).decode() if raw else False
+        flow.attachment_name = (message.get('caption') or '').strip()[:120] or filename
+        return self._finish_flow(flow)
+
     def _handle_callback(self, callback_query):
-        """Buton tıklamaları: callback_data 'cmd:<komut> [arg]' / 'f...:<value>'."""
+        """Buton tıklamaları: callback_data 'cmd:<komut> [arg]' / 'f...:<value>' / 'so:<id>'."""
         callback_query_id = callback_query.get('id')
         self._api('answerCallbackQuery', {'callback_query_id': callback_query_id})
         sender = callback_query.get('from') or {}
@@ -184,12 +237,18 @@ class TelegramBot(models.AbstractModel):
         username = sender.get('username') or sender.get('first_name') or ''
 
         self = self.with_context(tg_chat_id=str(chat_id))
-        if sender.get('id') not in self._allowed_ids():
+        mapped = self._odoo_user_for(sender.get('id'))
+        if mapped:
+            self = self.with_user(mapped).with_context(tg_chat_id=str(chat_id), tg_uid=mapped.id)
+
+        if sender.get('id') not in self._allowed_ids() and not mapped:
             reply = self._deny(sender)
         elif data.startswith('cmd:'):
             parts = data[4:].strip().split(' ', 1)
             arg = parts[1].strip() if len(parts) > 1 else ''
             reply = self._dispatch(self._clean_command(parts[0]), arg, chat_id)
+        elif data.startswith('so:'):
+            reply = self._confirm_order(chat_id, data[3:])
         elif data.startswith('f') and ':' in data:
             reply = self._flow_choice(chat_id, data)
         else:
@@ -232,6 +291,8 @@ class TelegramBot(models.AbstractModel):
             '/musteri': self.cmd_musteri,
             '/rapor': self.cmd_rapor,
             '/bilet': self.cmd_bilet,
+            '/kur': self.cmd_kur,
+            '/sor': self.cmd_sor,
         }.get(command)
         if handler is None:
             return self.cmd_yardim()
@@ -261,6 +322,55 @@ class TelegramBot(models.AbstractModel):
     def _flow_keyboard(self, rows):
         return {'inline_keyboard': [[{'text': label, 'callback_data': data}
                                      for label, data in row] for row in rows]}
+
+    def _confirm_order(self, chat_id, order_id):
+        order = self.env['sale.order'].with_context(
+            tg_chat_id=str(chat_id)).browse(int(order_id))
+        if not order.exists():
+            return '❌ Sipariş bulunamadı.'
+        if order.state not in ('draft', 'sent'):
+            return 'ℹ️ %s zaten onaylı/kapalı durumda.' % order.name
+        order.action_confirm()
+        return '✅ <b>Sipariş onaylandı</b>\n%s · %s · %0.2f %s' % (
+            order.name,
+            self._h(order.partner_id.name),
+            order.amount_total,
+            self._h(order.currency_id.symbol),
+        )
+
+    def cmd_kur(self, arg):
+        try:
+            items = _build_payload()
+        except Exception:
+            _logger.exception('cmd_kur veri alınamadı')
+            return '❌ Kur verisi alınamadı, biraz sonra dene.'
+        lines = ['💱 <b>Kurlar & Altın</b>']
+        for it in items:
+            sign = '+' if it['change'] > 0 else ''
+            lines.append('%s: <b>%s</b> %s (%s%%)' % (
+                self._h(it['label']),
+                '{:,.2f}'.format(it['value']),
+                self._h(it['currency']),
+                sign + '{:,.2f}'.format(it['change']),
+            ))
+        return '\n'.join(lines)
+
+    def cmd_sor(self, arg):
+        if not arg:
+            return 'ℹ️ Kullanım: <code>/sor geçen ay ciro</code>'
+        try:
+            answer = self.env['sales.insights.nl'].sudo().query(arg).get('answer')
+        except Exception:
+            _logger.exception('cmd_sor NL sorgu hatası')
+            answer = '❌ Sorgu çalıştırılamadı.'
+        return answer
+
+    def _ask_attachment(self):
+        return (
+            '📎 <b>Fotoğraf</b> — dilersen tek fotoğraf/dosya gönder;\n'
+            'ya da "skip" yaz / aşağıdaki butona bas.',
+            {'inline_keyboard': [[{'text': '📤 Ekledim / geç', 'callback_data': 'fskip'}]]},
+        )
 
     def cmd_bilet(self, arg):
         chat_id = self.env.context.get('tg_chat_id')
@@ -346,7 +456,12 @@ class TelegramBot(models.AbstractModel):
             )
         if step == 'description':
             flow.description = '' if text.lower() == 'skip' else text
-            return self._finish_flow(flow)
+            flow.step = 'attachment'
+            return self._ask_attachment()
+        if step == 'attachment':
+            if text.lower() == 'skip':
+                return self._finish_flow(flow)
+            return self._ask_attachment()
         flow.unlink()
         return '🚫 Ticket akışı sıfırlandı.'
 
@@ -377,6 +492,8 @@ class TelegramBot(models.AbstractModel):
             if flow.step == 'assignee':
                 flow.step = 'description'
                 return self._ask_description()
+            if flow.step == 'attachment':
+                return self._finish_flow(flow)
             flow.unlink()
             return '🚫 Ticket akışı iptal edildi.'
         return self.cmd_yardim()
@@ -392,8 +509,14 @@ class TelegramBot(models.AbstractModel):
             vals['description'] = '<p>%s</p>' % self._h(flow.description)
         customer = flow.partner_id.name
         assignee = flow.user_id.name
+        attachment_name = flow.attachment_name or 'photo.jpg'
+        attachment_data = flow.attachment_data
         flow.unlink()
         ticket = self.env['mini.helpdesk.ticket'].sudo().create(vals)
+        if attachment_data:
+            ticket.message_post(
+                body='📎 Telegram ek dosyası',
+                attachments=[(attachment_name, attachment_data)])
         return '✅ <b>Ticket oluşturuldu</b>\n%s — %s\n🏢 %s · 👤 %s · 🎯 %s' % (
             self._h(ticket.number),
             self._h(ticket.name),
@@ -417,7 +540,7 @@ class TelegramBot(models.AbstractModel):
 
     def cmd_siparis(self, arg):
         SaleOrder = self.env['sale.order'].sudo()
-        domain = [('state', 'in', ('sale', 'done'))]
+        domain = [('state', '!=', 'cancel')]
         if arg:
             partner = self.env['res.partner'].sudo().search(
                 [('name', 'ilike', arg)], limit=1)
@@ -426,17 +549,24 @@ class TelegramBot(models.AbstractModel):
             domain.append(('partner_id', '=', partner.id))
         orders = SaleOrder.search(domain, order='date_order desc, id desc', limit=5)
         if not orders:
-            return '📭 Onaylı sipariş bulunamadı.'
-        lines = ['🧾 <b>Son %d onaylı sipariş</b>' % len(orders)]
+            return '📭 Sipariş/teklif bulunamadı.'
+        lines = ['🧾 <b>Son %d sipariş/teklif</b>' % len(orders)]
+        confirm_rows = []
         for o in orders:
             date = o.date_order and o.date_order.strftime('%d.%m.%Y') or ''
-            lines.append('%s — %s · %0.2f %s · %s' % (
+            state_label = dict(SaleOrder._fields['state'].selection).get(o.state, o.state)
+            lines.append('%s · %s · %s — %s · %0.2f %s' % (
                 o.name,
                 self._h(o.partner_id.name),
+                self._h(state_label),
+                date,
                 o.amount_total,
                 self._h(o.currency_id.symbol),
-                date,
             ))
+            if o.state in ('draft', 'sent'):
+                confirm_rows.append([('✅ Onayla %s' % o.name, 'so:%d' % o.id)])
+        if confirm_rows:
+            return ('\n'.join(lines), {'inline_keyboard': confirm_rows})
         return '\n'.join(lines)
 
     def cmd_stok(self, arg):

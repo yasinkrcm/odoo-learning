@@ -10,11 +10,12 @@ dispatches white-listed user commands and replies in HTML:
 /yardim. Incoming updates are audited in telegram.bot.log.
 Uses the bot token configured for telegram_notify.
 """,
-    'depends': ['base', 'mail', 'telegram_notify', 'sale'],
+    'depends': ['base', 'mail', 'telegram_notify', 'sale', 'finance_ticker', 'sales_insights'],
     'data': [
         'security/ir.model.access.csv',
         'data/cron.xml',
         'views/telegram_bot_log_views.xml',
+        'views/res_users_views.xml',
     ],
     'installable': True,
     'application': False,
